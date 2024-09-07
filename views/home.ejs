@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<script>
+var _hmt = _hmt || [];
+(function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?2472ef3603b334b2cdc8d2109cd5c9ab";
+    var s = document.getElementsByTagName("script")[0]; 
+    s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .main-content {
+            width: 100%;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            padding: 20px 0;
+        }
+        .title {
+            font-size: 24px;
+            margin: 0;
+            margin-right: 20px;
+        }
+        .search-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-grow: 1;
+            justify-content: center;
+        }
+        #search-input {
+            flex-grow: 1;
+            max-width: 300px;
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        #sort-button, #area-filter {
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            background-color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .user-info {
+            margin-left: 20px;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        .user-info a {
+            color: #3498db;
+            text-decoration: none;
+            margin-left: 10px;
+        }
+        .user-info a:hover {
+            text-decoration: underline;
+        }
+        .card-list {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            justify-content: center;
+        }
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .card-cover-container {
+            width: 100%;
+            padding-top: 75%; /* 4:3 宽高比 */
+            position: relative;
+            overflow: hidden;
+        }
+        .card-cover {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .card-content {
+            padding: 15px;
+        }
+        .card-number {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .card-description {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .card-price {
+            color: #e74c3c;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .card-area {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+        .detail-page {
+            position: fixed;
+            top: 0;
+            right: -33.33%;
+            width: 33.33%;
+            height: 100%;
+            background-color: white;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            transition: 0.3s;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 1000;
+        }
+        .detail-page.open {
+            right: 0;
+        }
+        .detail-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: none;
+            z-index: 999;
+        }
+        .overlay.open {
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            .card-list {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .title {
+                margin-bottom: 15px;
+                text-align: center;
+            }
+            .search-bar {
+                margin-bottom: 15px;
+            }
+            .user-info {
+                margin-left: 0;
+                text-align: center;
+            }
+            .detail-page {
+                width: 100%;
+                right: -100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="main-content">
+            <div class="header">
+                <h1 class="title">老师信息大全</h1>
+                <div class="search-bar">
+                    <input type="text" id="search-input" placeholder="搜索...">
+                    <button id="sort-button">
+                        <span id="sort-icon">↑↓</span>
+                        编号
+                    </button>
+                    <select id="area-filter">
+                        <option value="">所有地区</option>
+                    </select>
+                </div>
+                <% if (typeof user !== 'undefined' && user) { %>
+                    <div class="user-info">
+                        欢迎, <%= user.username %> | <a href="/logout">登出</a>
+                    </div>
+                <% } else { %>
+                    <div class="user-info">
+                        <a href="/login">登录</a> | <a href="/register">注册</a>
+                    </div>
+                <% } %>
+            </div>
+            <div class="card-list" id="card-container"></div>
+        </div>
+    </div>
+    
+    <div class="overlay" id="overlay"></div>
+    <div class="detail-page" id="detail-page">
+        <span class="detail-close" onclick="closeDetail()">&times;</span>
+        <div id="detail-content"></div>
+    </div>
+
+    <script>
+        let cardData = <%- JSON.stringify(content.data) %>;
+        let sortAscending = true;
+        let isDetailOpen = false;
+
+        function populateAreaFilter() {
+            const areaFilter = document.getElementById('area-filter');
+            const areas = [...new Set(cardData.map(card => card.area))];
+            areas.forEach(area => {
+                const option = document.createElement('option');
+                option.value = area;
+                option.textContent = area;
+                areaFilter.appendChild(option);
+            });
+        }
+
+        function renderCards(cards) {
+            const container = document.getElementById('card-container');
+            container.innerHTML = '';
+            cards.forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                cardElement.innerHTML = `
+                    <div class="card-cover-container">
+                        <img src="${card.preview}" alt="卡片${card.id}封面" class="card-cover">
+                    </div>
+                    <div class="card-content">
+                        <div class="card-number">编号：${card.id}</div>
+                        <div class="card-description">${card.simpleInfo}</div>
+                        <div class="card-price">￥${card.price.toFixed(2)}</div>
+                        <div class="card-area">地区：${card.location}</div>
+                    </div>
+                `;
+                cardElement.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openDetail(card);
+                });
+                container.appendChild(cardElement);
+            });
+        }
+
+        function filterAndSortCards() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const selectedArea = document.getElementById('area-filter').value;
+            let filteredCards = cardData.filter(card => 
+                (card.simpleInfo.toLowerCase().includes(searchTerm) || card.id.toString().includes(searchTerm)) &&
+                (selectedArea === '' || card.area === selectedArea)
+            );
+            
+            filteredCards.sort((a, b) => {
+                if (sortAscending) {
+                    return a.id - b.id;
+                } else {
+                    return b.id - a.id;
+                }
+            });
+
+            renderCards(filteredCards);
+        }
+
+        function openDetail(card) {
+            const detailPage = document.getElementById('detail-page');
+            const overlay = document.getElementById('overlay');
+            const detailContent = document.getElementById('detail-content');
+            let detailHtml = `
+                <h2>编号：${card.id}</h2>
+                <img src="${card.preview}" alt="预览图" style="width: 100%; height: auto; object-fit: cover; margin-bottom: 15px;">
+                <p><strong>简介：</strong> ${card.simpleInfo}</p>
+                <p><strong>价格：</strong> ￥${card.price.toFixed(2)}</p>
+                <p><strong>地区：</strong> ${card.location}</p>
+                <p><strong>详情：</strong></p>
+            `;
+
+            card.detail.forEach(item => {
+                if (item.type === 1) {
+                    detailHtml += `<p>${item.content}</p>`;
+                } else if (item.type === 2) {
+                    detailHtml += `<img src="${item.content}" alt="详情图片" style="max-width: 100%; height: auto; margin-bottom: 15px;">`;
+                }
+            });
+
+            detailHtml += `
+                <div class="comment-list">
+                    <h3>评论</h3>
+                    ${card.commnet.map(comment => `<div class="comment">${comment}</div>`).join('')}
+                </div>
+            `;
+
+            detailContent.innerHTML = detailHtml;
+            detailPage.classList.add('open');
+            overlay.classList.add('open');
+            
+            if (!isDetailOpen) {
+                history.pushState({ isDetail: true }, '');
+                isDetailOpen = true;
+            }
+
+            // 手动发送 PV 统计
+            if (window._hmt) {
+                _hmt.push(['_trackPageview', '/detail/' + card.id]);
+            }
+        }
+
+        function closeDetail() {
+            const detailPage = document.getElementById('detail-page');
+            const overlay = document.getElementById('overlay');
+            detailPage.classList.remove('open');
+            overlay.classList.remove('open');
+
+            if (isDetailOpen) {
+                history.back();
+                isDetailOpen = false;
+            }
+        }
+
+        function toggleSort() {
+            sortAscending = !sortAscending;
+            document.getElementById('sort-icon').textContent = sortAscending ? '↑↓' : '↓↑';
+            filterAndSortCards();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            populateAreaFilter();
+            filterAndSortCards();
+
+            document.getElementById('search-input').addEventListener('input', filterAndSortCards);
+            document.getElementById('area-filter').addEventListener('change', filterAndSortCards);
+            document.getElementById('sort-button').addEventListener('click', toggleSort);
+
+            document.addEventListener('click', function(event) {
+                const detailPage = document.getElementById('detail-page');
+                if (detailPage.classList.contains('open') && !detailPage.contains(event.target)) {
+                    closeDetail();
+                }
+            });
+
+            document.getElementById('detail-page').addEventListener('click', function(event) {
+                event.stopPropagation();
+            });
+
+            document.getElementById('overlay').addEventListener('click', closeDetail);
+
+            window.addEventListener('popstate', function(event) {
+                if (event.state && event.state.isDetail) {
+                    // 如果是详情页状态，不做任何操作
+                } else {
+                    // 如果不是详情页状态，关闭详情页
+                    const detailPage = document.getElementById('detail-page');
+                    const overlay = document.getElementById('overlay');
+                    if (detailPage.classList.contains('open')) {
+                        detailPage.classList.remove('open');
+                        overlay.classList.remove('open');
+                        isDetailOpen = false;
+                    }
+                }
+            });
+
+            // 检查 URL 中是否有 id 参数
+            const idParam = new URLSearchParams(window.location.search).get('id');
+            if (idParam) {
+                const card = cardData.find(card => card.id.toString() === idParam);
+                if (card) {
+                    openDetail(card);
+                } else {
+                    console.log('未找到对应 ID 的卡片');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

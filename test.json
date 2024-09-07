@@ -1,0 +1,31 @@
+{
+	"code": 200,
+	"data": [
+		{
+			"id": 1,
+			"simpleInfo": "[推荐]教授数学很有经验",
+			"preview": "iceice/1.jpg",
+			"location": "海淀 五道口",
+			"price": 1000.0,
+			"area": "海淀",
+			"detail": [{
+				"type": 2,
+				"content": "iceice/1.jpg "
+			}],
+			"commnet": ["1号老师很不错，很负责人"]
+		},
+		{
+			"id": 2,
+			"simpleInfo": "[推荐]教授英语很有经验",
+			"preview": "iceice/2.jpg",
+			"location": "海淀 五道口",
+			"price": 1000.0,
+			"area": "海淀",
+			"detail": [{
+				"type": 2,
+				"content": "iceice/1.jpg "
+			}],
+			"commnet": ["2号老师很不错，很负责人"]
+		}
+	]
+}

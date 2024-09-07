@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <h1>登录</h1>
+    <% if (locals.registered) { %>
+        <p style="color: green;">注册成功,请登录</p>
+    <% } %>
+    <% if (locals.error) { %>
+        <p style="color: red;"><%= error %></p>
+    <% } %>
+    <form action="/api/users/login" method="POST">
+        <div>
+            <label for="username">用户名：</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+        <div>
+            <label for="password">密码：</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <button type="submit">登录</button>
+    </form>
+    <p>还没有账号？<a href="/register">注册</a></p>
+</body>
+</html>
