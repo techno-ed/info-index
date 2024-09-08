@@ -37,7 +37,11 @@ exports.login = async (req, res) => {
     if (!isValid) {
       return res.status(401).render('login', { error: '密码错误' });
     }
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign(
+      { id: user.id, username: user.username },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
     
     // 将 token 存储在 cookie 中
     res.cookie('token', token, { httpOnly: true, maxAge: 3600000 }); // 1小时有效期
