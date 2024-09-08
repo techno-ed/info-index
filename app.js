@@ -13,7 +13,7 @@ const app = express();
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json());  // 添加这行来支持 JSON 请求体
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
@@ -39,11 +39,13 @@ app.set('views', path.join(__dirname, 'views'));
 // 导入路由
 const homeRoutes = require('./routes/homeRoutes');
 const userRoutes = require('./routes/userRoutes');
+const adminRoutes = require('./routes/admin');
 
 // 使用路由
 app.use('/', homeRoutes);
 app.use('/api/users', userRoutes);
 app.use('/', userRoutes);  // 注意这里的变化
+app.use('/admin', adminRoutes);
 
 const PORT = process.env.PORT || 3000;
 

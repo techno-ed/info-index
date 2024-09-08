@@ -1,0 +1,1967 @@
+info-index/
+  .DS_Store
+    内容：
+    (跳过二进制文件)
+
+  .env
+    内容：
+    DB_NAME=zeabur
+DB_USER=root
+DB_PASSWORD=sQTw0RtUJyKMg57C1Wp892h6If4N3EHc
+DB_HOST=hkg1.clusters.zeabur.com
+DB_PORT=32288
+JWT_SECRET=1nXOITVNgp7s5qXheNF1aqH8F35YtCg95nII9SukN5k=
+DB_DIALECT=sqlite
+DB_STORAGE=database.sqlite
+SESSION_SECRET=dajdiadiaiudjxpafdjdsadasuihasu
+
+
+  a.txt
+    内容：
+    
+
+  app.js
+    内容：
+    require('dotenv').config();
+const express = require('express');
+const path = require('path');
+const cors = require('cors');
+const { sequelize } = require('./config/database');
+const cookieParser = require('cookie-parser');
+const session = require('express-session');
+const passport = require('passport');
+
+const app = express();
+
+// 设置静态文件服务
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: process.env.NODE_ENV === 'production' }
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+// 添加一个中间件来确保 req.user 总是可用
+app.use((req, res, next) => {
+  res.locals.user = req.user || null;
+  next();
+});
+
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+// 导入路由
+const homeRoutes = require('./routes/homeRoutes');
+const userRoutes = require('./routes/userRoutes');
+
+// 使用路由
+app.use('/', homeRoutes);
+app.use('/api/users', userRoutes);
+app.use('/', userRoutes);  // 注意这里的变化
+
+const PORT = process.env.PORT || 3000;
+
+sequelize.sync().then(() => {
+  app.listen(PORT, () => {
+    console.log(`服务器运行在端口 ${PORT}`);
+  });
+});
+
+
+  config/
+    database.js
+      内容：
+      const { Sequelize } = require('sequelize');
+const path = require('path');
+
+const sequelize = new Sequelize({
+  dialect: 'sqlite',
+  storage: path.join(__dirname, '..', 'database.sqlite')
+});
+
+module.exports = { sequelize };  // 注意这里的变化
+
+
+  context.txt
+    内容：
+    	你现在是一个高级开发工程师，精通前端开发和后端开发。能够对于项目需求有自己的理解，并且能设计和进行代码实现，可以使用第三方库。
+
+	我现在有一个静态网站 index.html,然后他会使用本地的数据test.json去动态渲染他的网页，并且会读取对应路径iceice中的图片，渲染网页。
+
+	现在因为业务的需要，我需要对他进行扩展。有如下要求：
+		1、后边的开发都是基于test.json中的数据结构。
+		2、你需要实现一个用户系统，他主要包含用户的注册和登录以及用户的管理，用户信息现在有角色（管理员和普通用户）、积分，后续可能会根据需要扩展，比如金币等。因此，需要有一个登录注册页面，并且不登录注册的话不能进入后边讲到的主页。
+		3、需要有一个主页，主页主要是在现在的index.html的基础上，添加单个cell的收藏功能，用户中心功能，以及判断角色是管理员可以进入到管理页面。
+		4、还需要管理页面，只有管理员可以进入，管理员可以对信息进行增删改查的管理，支持上传图片，上传到服务器本地即可，此外还可以管理用户，比如删除用户，增加用户，修改用户信息等。
+
+
+
+  controllers/
+    homeController.js
+      内容：
+      const Content = require('../models/Content');
+
+exports.getHomePage = async (req, res) => {
+  try {
+    const content = await Content.findAll({
+      order: [['id', 'ASC']],
+      limit: 50  // 限制返回的数量
+    });
+
+    const formattedContent = {
+      code: 200,
+      data: content.map(item => ({
+        id: item.id,
+        simpleInfo: item.simpleInfo,
+        preview: item.preview,
+        location: item.location,
+        price: item.price,
+        area: item.area,
+        detail: item.detail,
+        commnet: item.commnet
+      }))
+    };
+
+    res.render('home', { 
+      title: '老师信息大全', 
+      content: formattedContent,
+      user: req.user  // Passport.js 会自动将用户信息附加到 req.user
+    });
+  } catch (error) {
+    console.error('获取内容时出错:', error);
+    res.status(500).render('error', { message: '加载主页时出错' });
+  }
+};
+
+
+    userController.js
+      内容：
+      const User = require('../models/User');
+const jwt = require('jsonwebtoken');
+
+exports.register = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    // 检查用户名是否已存在
+    const existingUser = await User.findOne({ where: { username } });
+    if (existingUser) {
+      return res.status(400).render('register', { error: '用户名已存在' });
+    }
+
+    // 创建新用户
+    await User.create({
+      username,
+      password,
+      role: 'user'  // 默认角色为普通用户
+    });
+
+    // 重定向到登录页面,并显示成功消息
+    res.redirect('/login?registered=true');
+  } catch (error) {
+    console.error('注册错误:', error);
+    res.status(500).render('register', { error: '注册失败,请稍后再试' });
+  }
+};
+
+exports.login = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ where: { username } });
+    if (!user) {
+      return res.status(404).render('login', { error: '用户不存在' });
+    }
+    const isValid = await user.validPassword(password);
+    if (!isValid) {
+      return res.status(401).render('login', { error: '密码错误' });
+    }
+    const token = jwt.sign(
+      { id: user.id, username: user.username, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+    
+    // 将 token 存储在 cookie 中
+    res.cookie('token', token, { httpOnly: true, maxAge: 3600000 }); // 1小时有效期
+    
+    // 重定向到主页
+    res.redirect('/');
+  } catch (error) {
+    console.error('登录错误:', error);
+    res.status(500).render('login', { error: '登录失败,请稍后再试' });
+  }
+};
+
+exports.getLoginPage = (req, res) => {
+    const registered = req.query.registered === 'true';
+    res.render('login', { 
+        title: '登录',
+        registered: registered
+    });
+};
+
+exports.getRegisterPage = (req, res) => {
+    res.render('register', { title: '注册' });
+};
+
+// ... 其他导入和方法 ...
+
+exports.logout = (req, res) => {
+    res.clearCookie('token');
+    res.redirect('/login');
+};
+
+
+  database.sqlite
+    内容：
+    (跳过二进制文件)
+
+  index.html
+    内容：
+    <!DOCTYPE html>
+<html lang="zh">
+
+<script>
+var _hmt = _hmt || [];
+(function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?2472ef3603b334b2cdc8d2109cd5c9ab";
+    var s = document.getElementsByTagName("script")[0]; 
+    s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>老师信息大全</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            display: flex;
+            transition: 0.3s;
+        }
+        .main-content {
+            flex: 1;
+            transition: 0.3s;
+            padding: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 0;
+        }
+        .search-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        #search-input {
+            width: 200px;
+            padding: 8px 15px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+            transition: 0.3s;
+        }
+        #search-input:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+        }
+        #sort-button, #area-filter {
+            padding: 8px 15px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            background-color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        #sort-button:hover, #area-filter:hover {
+            background-color: #f0f0f0;
+        }
+        #sort-icon {
+            margin-right: 5px;
+        }
+        .card-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .card-cover {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+        .card-content {
+            padding: 15px;
+        }
+        .card-number {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .card-description {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .card-price {
+            font-weight: bold;
+            color: #e44d26;
+        }
+        .card-area {
+            font-size: 14px;
+            color: #444;
+            margin-top: 5px;
+        }
+        .card-cover-container {
+            width: 100%;
+            padding-top: 75%; /* 4:3 宽高比 */
+            position: relative;
+            overflow: hidden;
+            background-color: #f0f0f0;
+        }
+        .card-cover {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .detail-page {
+            position: fixed;
+            top: 0;
+            right: -30%;
+            width: 30%;
+            height: 100%;
+            background-color: white;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            transition: 0.3s;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 1000;
+        }
+        .detail-page.open {
+            right: 0;
+        }
+        .detail-page img {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 15px;
+        }
+        .detail-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .comment-list {
+            margin-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 20px;
+        }
+        .comment {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .comment:last-child {
+            border-bottom: none;
+        }
+        @media (min-width: 1200px) {
+            .card-list {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .title {
+                margin-bottom: 10px;
+            }
+            .search-bar {
+                flex-wrap: wrap;
+                justify-content: space-between;
+            }
+            #search-input {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            #sort-button, #area-filter {
+                flex: 1;
+            }
+            .card-list {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            .card-cover {
+                height: 100px;
+            }
+            .card-content {
+                padding: 10px;
+            }
+            .card-description, .card-price, .card-area {
+                font-size: 12px;
+            }
+            .detail-page {
+                width: 100%;
+                right: -100%;
+            }
+            .detail-page.open {
+                right: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-content">
+            <div class="header">
+                <h1 class="title">北京女王信息大全</h1>
+                <div class="search-bar">
+                    <input type="text" id="search-input" placeholder="搜索...">
+                    <button id="sort-button">
+                        <span id="sort-icon">↑↓</span>
+                        编号
+                    </button>
+                    <select id="area-filter">
+                        <option value="">所有地区</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-list" id="card-container"></div>
+        </div>
+        <div class="detail-page" id="detail-page">
+            <span class="detail-close" onclick="closeDetail()">&times;</span>
+            <div id="detail-content"></div>
+        </div>
+    </div>
+
+    <script>
+        let cardData = [];
+        let sortAscending = true;
+
+        // 从JSON文件加载数据
+        fetch('test.json')
+            .then(response => response.json())
+            .then(data => {
+                cardData = data.data;
+                populateAreaFilter();
+                filterAndSortCards();
+
+                const idParam = getUrlParameter('id');
+                if (idParam) {
+                    const card = cardData.find(card => card.id.toString() === idParam);
+                    if (card) {
+                        openDetail(card);
+                    } else {
+                        console.log('未找到对应 ID 的卡片');
+                    }
+                }
+            })
+            .catch(error => console.error('Error loading the JSON file:', error));
+
+        
+        // 解析 URL 参数的函数
+        function getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查 URL 中是否有 id 参数
+            const idParam = getUrlParameter('id');
+            if (idParam) {
+                // 如果有 id 参数，查找对应的卡片并打开详情
+                const card = cardData.find(card => card.id.toString() === idParam);
+                if (card) {
+                    openDetail(card);
+                } else {
+                    console.log('未找到对应 ID 的卡片');
+                }
+            }
+        });
+
+        function populateAreaFilter() {
+            const areaFilter = document.getElementById('area-filter');
+            const areas = [...new Set(cardData.map(card => card.area))];
+            areas.forEach(area => {
+                const option = document.createElement('option');
+                option.value = area;
+                option.textContent = area;
+                areaFilter.appendChild(option);
+            });
+        }
+
+        function renderCards(cards) {
+            const container = document.getElementById('card-container');
+            container.innerHTML = '';
+            cards.forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                cardElement.innerHTML = `
+                    <div class="card-cover-container">
+                        <img src="${card.preview}" alt="卡片${card.id}封面" class="card-cover">
+                    </div>
+                    <div class="card-content">
+                        <div class="card-number">编号：${card.id}</div>
+                        <div class="card-description">${card.simpleInfo}</div>
+                        <div class="card-price">￥${card.price.toFixed(2)}</div>
+                        <div class="card-area">地区：${card.location}</div>
+                    </div>
+                `;
+                cardElement.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openDetail(card);
+                });
+                container.appendChild(cardElement);
+            });
+        }
+
+        function filterAndSortCards() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const selectedArea = document.getElementById('area-filter').value;
+            let filteredCards = cardData.filter(card => 
+                (card.simpleInfo.toLowerCase().includes(searchTerm) || card.id.toString().includes(searchTerm)) &&
+                (selectedArea === '' || card.area === selectedArea)
+            );
+            
+            filteredCards.sort((a, b) => {
+                if (sortAscending) {
+                    return a.id - b.id;
+                } else {
+                    return b.id - a.id;
+                }
+            });
+
+            renderCards(filteredCards);
+        }
+
+        let isDetailOpen = false;
+
+        function openDetail(card) {
+            const detailPage = document.getElementById('detail-page');
+            const detailContent = document.getElementById('detail-content');
+            let detailHtml = `
+                <h2>编号：${card.id}</h2>
+                <img src="${card.preview}" alt="预览图" style="width: 100%; height: 100%; object-fit: cover; margin-bottom: 15px;">
+                <p><strong>简介：</strong> ${card.simpleInfo}</p>
+                <p><strong>价格：</strong> ￥${card.price.toFixed(2)}</p>
+                <p><strong>地区：</strong> ${card.location}</p>
+                <p><strong>详情：</strong></p>
+            `;
+
+            // 处理详情内容
+            card.detail.forEach(item => {
+                if (item.type === 1) {
+                    detailHtml += `<p>${item.content}</p>`;
+                } else if (item.type === 2) {
+                    detailHtml += `<img src="${item.content}" alt="详情图片" style="max-width: 100%; height: auto; margin-bottom: 15px;">`;
+                }
+            });
+
+            // 添加评论
+            detailHtml += `
+                <div class="comment-list">
+                    <h3>评论</h3>
+                    ${card.commnet.map(comment => `<div class="comment">${comment}</div>`).join('')}
+                </div>
+            `;
+
+            detailContent.innerHTML = detailHtml;
+            detailPage.classList.add('open');
+            if (window.innerWidth > 768) {
+                document.querySelector('.main-content').style.width = '70%';
+            }
+            // 添加历史记录状态
+            if (!isDetailOpen) {
+                history.pushState({ isDetail: true }, '');
+                isDetailOpen = true;
+            }
+
+             // 手动发送 PV 统计
+            if (window._hmt) {
+                _hmt.push(['_trackPageview', '/detail/' + card.id]);
+            }
+        }
+
+        function closeDetail() {
+            const detailPage = document.getElementById('detail-page');
+            detailPage.classList.remove('open');
+            document.querySelector('.main-content').style.width = '100%';
+
+            // 移除历史记录状态
+            if (isDetailOpen) {
+                history.back();
+                isDetailOpen = false;
+            }
+        }
+
+        function toggleSort() {
+            sortAscending = !sortAscending;
+            document.getElementById('sort-icon').textContent = sortAscending ? '↑↓' : '↓↑';
+            filterAndSortCards();
+        }
+
+        document.getElementById('search-input').addEventListener('input', filterAndSortCards);
+        document.getElementById('area-filter').addEventListener('change', filterAndSortCards);
+        document.getElementById('sort-button').addEventListener('click', toggleSort);
+
+        // 点击外部关闭详情页
+        document.addEventListener('click', function(event) {
+            const detailPage = document.getElementById('detail-page');
+            if (detailPage.classList.contains('open') && !detailPage.contains(event.target)) {
+                closeDetail();
+            }
+        });
+
+        // 阻止详情页内部点击事件冒泡
+        document.getElementById('detail-page').addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
+
+        // 监听 popstate 事件
+        window.addEventListener('popstate', function(event) {
+            if (event.state && event.state.isDetail) {
+                // 如果是详情页状态，不做任何操作
+            } else {
+                // 如果不是详情页状态，关闭详情页
+                const detailPage = document.getElementById('detail-page');
+                if (detailPage.classList.contains('open')) {
+                    detailPage.classList.remove('open');
+                    document.querySelector('.main-content').style.width = '100%';
+                    isDetailOpen = false;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+
+  js/
+  middlewares/
+    auth.js
+      内容：
+      const jwt = require('jsonwebtoken');
+
+exports.isLoggedIn = (req, res, next) => {
+  const token = req.cookies.token;
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = decoded;
+      next();
+    } catch (error) {
+      res.clearCookie('token');
+      res.redirect('/login');
+    }
+  } else {
+    res.redirect('/login');
+  }
+};
+
+
+  models/
+    Content.js
+      内容：
+      const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
+
+const Content = sequelize.define('Content', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  simpleInfo: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  preview: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  location: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  price: {
+    type: DataTypes.FLOAT,
+    allowNull: false
+  },
+  area: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  detail: {
+    type: DataTypes.JSON,
+    allowNull: false
+  },
+  commnet: {
+    type: DataTypes.JSON,
+    allowNull: false
+  }
+});
+
+module.exports = Content;
+
+
+    User.js
+      内容：
+      const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
+const bcrypt = require('bcryptjs');
+
+const User = sequelize.define('User', {
+  username: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true
+  },
+  password: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  role: {
+    type: DataTypes.ENUM('user', 'admin'),
+    defaultValue: 'user'
+  }
+}, {
+  hooks: {
+    beforeCreate: async (user) => {
+      if (user.password) {
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(user.password, salt);
+      }
+    },
+    beforeUpdate: async (user) => {
+      if (user.changed('password')) {
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(user.password, salt);
+      }
+    }
+  }
+});
+
+User.prototype.validPassword = async function(password) {
+  return await bcrypt.compare(password, this.password);
+};
+
+module.exports = User;
+
+
+  package.json
+    内容：
+    {
+  "name": "info-index",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "seed": "node scripts/seedContent.js",
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "jsonwebtoken": "^9.0.2",
+    "mariadb": "^3.3.1",
+    "passport": "^0.7.0",
+    "sequelize": "^6.37.3",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}
+
+
+  project_structure.txt
+    内容：
+    info-index/
+  app.js
+    内容预览：
+    require('dotenv').config();
+    const express = require('express');
+    const path = require('path');
+    const cors = require('cors');
+    const { sequelize } = require('./config/database');
+    ...
+
+  config/
+    database.js
+      内容预览：
+      const { Sequelize } = require('sequelize');
+      const path = require('path');
+      
+      const sequelize = new Sequelize({
+        dialect: 'sqlite',
+      ...
+
+  context.txt
+    内容预览：
+    	你现在是一个高级开发工程师，精通前端开发和后端开发。能够对于项目需求有自己的理解，并且能设计和进行代码实现，可以使用第三方库。
+    
+    	我现在有一个静态网站 index.html,然后他会使用本地的数据test.json去动态渲染他的网页，并且会读取对应路径iceice中的图片，渲染网页。
+    
+    	现在因为业务的需要，我需要对他进行扩展。有如下要求：
+    ...
+
+  controllers/
+    homeController.js
+      内容预览：
+      const Content = require('../models/Content');
+      
+      exports.getHomePage = async (req, res) => {
+        try {
+          const content = await Content.findAll({
+      ...
+
+    userController.js
+      内容预览：
+      const User = require('../models/User');
+      const jwt = require('jsonwebtoken');
+      
+      exports.register = async (req, res) => {
+        try {
+      ...
+
+  database.sqlite
+    内容预览：
+    SQLite format 3   @                 
+    
+    ...
+
+  generate_project_structure.sh
+    内容预览：
+    #!/bin/bash
+    
+    # 检查是否提供了目录参数
+    if [ $# -eq 0 ]; then
+        echo "用法: $0 <目录路径> [文件类型1,文件类型2,...]"
+    ...
+
+  index.html
+    内容预览：
+    <!DOCTYPE html>
+    <html lang="zh">
+    
+    <script>
+    var _hmt = _hmt || [];
+    ...
+
+  js/
+  middlewares/
+    auth.js
+      内容预览：
+      const jwt = require('jsonwebtoken');
+      
+      exports.isLoggedIn = (req, res, next) => {
+        const token = req.cookies.token;
+        if (token) {
+      ...
+
+  models/
+    Content.js
+      内容预览：
+      const { DataTypes } = require('sequelize');
+      const { sequelize } = require('../config/database');
+      
+      const Content = sequelize.define('Content', {
+        id: {
+      ...
+
+    User.js
+      内容预览：
+      const { DataTypes } = require('sequelize');
+      const { sequelize } = require('../config/database');
+      const bcrypt = require('bcryptjs');
+      
+      const User = sequelize.define('User', {
+      ...
+
+  package.json
+    内容预览：
+    {
+      "name": "info-index",
+      "version": "1.0.0",
+      "description": "",
+      "main": "index.js",
+    ...
+
+  project_structure.txt
+    内容预览：
+    info-index/
+      app.js
+        内容预览：
+        require('dotenv').config();
+        const express = require('express');
+    ...
+
+  public/
+    css/
+      style.css
+        内容预览：
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        ...
+
+    images/
+      iceice/
+        1.jpg
+          内容预览：
+          ...
+
+        2.jpg
+          内容预览：
+          ...
+
+    js/
+      main.js
+        内容预览：
+        console.log('主页加载完成');
+        ...
+
+  routes/
+    homeRoutes.js
+      内容预览：
+      const express = require('express');
+      const router = express.Router();
+      const homeController = require('../controllers/homeController');
+      const { isLoggedIn } = require('../middlewares/auth');
+      
+      ...
+
+    userRoutes.js
+      内容预览：
+      const express = require('express');
+      const router = express.Router();
+      const userController = require('../controllers/userController');
+      
+      router.get('/login', userController.getLoginPage);
+      ...
+
+  scripts/
+    seedContent.js
+      内容预览：
+      const { sequelize } = require('../config/database');
+      const Content = require('../models/Content');
+      
+      const seedContent = async () => {
+        try {
+      ...
+
+  test.json
+    内容预览：
+    {
+    	"code": 200,
+    	"data": [
+    		{
+    			"id": 1,
+    ...
+
+  views/
+    error.ejs
+      内容预览：
+      <!DOCTYPE html>
+      <html lang="zh">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      ...
+
+    home.ejs
+      内容预览：
+      <!DOCTYPE html>
+      <html lang="zh">
+      
+      <script>
+      var _hmt = _hmt || [];
+      ...
+
+    login.ejs
+      内容预览：
+      <!DOCTYPE html>
+      <html lang="zh">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      ...
+
+    register.ejs
+      内容预览：
+      <!DOCTYPE html>
+      <html lang="zh">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      ...
+
+
+
+  public/
+    .DS_Store
+      内容：
+      (跳过二进制文件)
+
+    css/
+      style.css
+        内容：
+        body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    background-color: #333;
+    color: #fff;
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h1 {
+    margin: 0;
+}
+
+nav a {
+    color: #fff;
+    text-decoration: none;
+    margin-left: 1rem;
+}
+
+main {
+    padding: 2rem;
+}
+
+article {
+    background-color: #f4f4f4;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border-radius: 5px;
+}
+
+footer {
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    padding: 1rem;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+}
+
+
+    images/
+      iceice/
+        1.jpg
+          内容：
+          (跳过二进制文件)
+
+        2.jpg
+          内容：
+          (跳过二进制文件)
+
+    js/
+      main.js
+        内容：
+        console.log('主页加载完成');
+
+
+  routes/
+    homeRoutes.js
+      内容：
+      const express = require('express');
+const router = express.Router();
+const homeController = require('../controllers/homeController');
+const { isLoggedIn } = require('../middlewares/auth');
+
+// 添加一个中间件来记录 req.user
+const logUser = (req, res, next) => {
+  console.log('当前用户:', req.user);
+  next();
+};
+
+// 在 isLoggedIn 中间件之后，homeController.getHomePage 之前添加 logUser 中间件
+router.get('/', isLoggedIn, logUser, homeController.getHomePage);
+
+module.exports = router;
+
+
+    userRoutes.js
+      内容：
+      const express = require('express');
+const router = express.Router();
+const userController = require('../controllers/userController');
+
+router.get('/login', userController.getLoginPage);
+router.get('/register', userController.getRegisterPage);
+router.post('/api/users/register', userController.register);
+router.post('/api/users/login', userController.login);
+router.get('/logout', userController.logout);
+
+module.exports = router;
+
+
+  scripts/
+    seedContent.js
+      内容：
+      const { sequelize } = require('../config/database');
+const Content = require('../models/Content');
+
+const seedContent = async () => {
+  try {
+    await sequelize.sync({ force: true }); // 警告：这将删除现有的内容表
+
+    const contentData = [
+      {
+        simpleInfo: "[推荐]教授数学很有经验",
+        preview: "/images/iceice/1.jpg",  // 注意这里的路径更改
+        location: "海淀 五道口",
+        price: 1000.0,
+        area: "海淀",
+        detail: [{
+          type: 2,
+          content: "/images/iceice/1.jpg"  // 这里也要更改
+        }],
+        commnet: ["1号老师很不错，很负责人"]
+      },
+      {
+        simpleInfo: "[推荐]教授英语很有经验",
+        preview: "/images/iceice/2.jpg",  // 注意这里的路径更改
+        location: "海淀 五道口",
+        price: 1000.0,
+        area: "海淀",
+        detail: [{
+          type: 2,
+          content: "/images/iceice/2.jpg"  // 这里也要更改
+        }],
+        commnet: ["2号老师很不错，很负责人"]
+      }
+    ];
+
+    await Content.bulkCreate(contentData);
+
+    console.log('内容数据已成功添加到数据库');
+  } catch (error) {
+    console.error('添加内容数据时出错:', error);
+  } finally {
+    await sequelize.close();
+  }
+};
+
+seedContent();
+
+
+  struct.py
+    内容：
+    import os
+from pathlib import Path
+
+def generate_project_structure(directory, output_file, file_types=None):
+    exclude_dirs = {'.git', 'node_modules', 'build', 'dist', 'tmp', 'cache'}
+    exclude_files = {'.gitignore', 'package-lock.json', 'yarn.lock'}
+
+    def should_include_file(file_path):
+        if file_types is None:
+            return True
+        return file_path.suffix[1:] in file_types
+
+    def traverse_directory(dir_path, prefix=''):
+        output_file.write(f"{prefix}{dir_path.name}/\n")
+
+        for item in sorted(dir_path.iterdir()):
+            if item.is_dir():
+                if item.name not in exclude_dirs:
+                    traverse_directory(item, prefix + '  ')
+            elif item.is_file():
+                if item.name not in exclude_files and should_include_file(item):
+                    output_file.write(f"{prefix}  {item.name}\n")
+                    output_file.write(f"{prefix}    内容：\n")
+                    try:
+                        with item.open('r', encoding='utf-8') as f:
+                            content = f.read()
+                            output_file.write(f"{prefix}    {content}\n")
+                        output_file.write(f"\n")
+                    except UnicodeDecodeError:
+                        output_file.write(f"{prefix}    (跳过二进制文件)\n\n")
+
+    with open('a.txt', 'w', encoding='utf-8') as output_file:
+        traverse_directory(Path(directory))
+
+if __name__ == "__main__":
+    directory = '/Users/momo/Desktop/info-index'
+
+    if not os.path.isdir(directory):
+        print(f"目录 {directory} 不存在")
+        exit(1)
+
+    print("正在生成项目结构和完整内容...")
+    generate_project_structure(directory,directory+'/a.txt')
+    print("项目结构和完整内容已保存到 a.txt")
+
+
+  test.json
+    内容：
+    {
+	"code": 200,
+	"data": [
+		{
+			"id": 1,
+			"simpleInfo": "[推荐]教授数学很有经验",
+			"preview": "iceice/1.jpg",
+			"location": "海淀 五道口",
+			"price": 1000.0,
+			"area": "海淀",
+			"detail": [{
+				"type": 2,
+				"content": "iceice/1.jpg "
+			}],
+			"commnet": ["1号老师很不错，很负责人"]
+		},
+		{
+			"id": 2,
+			"simpleInfo": "[推荐]教授英语很有经验",
+			"preview": "iceice/2.jpg",
+			"location": "海淀 五道口",
+			"price": 1000.0,
+			"area": "海淀",
+			"detail": [{
+				"type": 2,
+				"content": "iceice/1.jpg "
+			}],
+			"commnet": ["2号老师很不错，很负责人"]
+		}
+	]
+}
+
+  views/
+    error.ejs
+      内容：
+      <!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>错误 - <%= status %></title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            text-align: center;
+        }
+        .error-container {
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            max-width: 600px;
+            margin: 50px auto;
+        }
+        h1 {
+            color: #d9534f;
+            margin-bottom: 20px;
+        }
+        .error-details {
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        .back-link {
+            display: inline-block;
+            background-color: #5bc0de;
+            color: #fff;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 3px;
+            transition: background-color 0.3s;
+        }
+        .back-link:hover {
+            background-color: #31b0d5;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <h1>出错了 - <%= status %></h1>
+        <div class="error-details">
+            <p><%= message %></p>
+        </div>
+        <% if (error.stack && process.env.NODE_ENV === 'development') { %>
+            <pre><%= error.stack %></pre>
+        <% } %>
+        <a href="/" class="back-link">返回首页</a>
+    </div>
+</body>
+</html>
+
+
+    home.ejs
+      内容：
+      <!DOCTYPE html>
+<html lang="zh">
+
+<script>
+var _hmt = _hmt || [];
+(function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?2472ef3603b334b2cdc8d2109cd5c9ab";
+    var s = document.getElementsByTagName("script")[0]; 
+    s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .main-content {
+            width: 100%;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            padding: 20px 0;
+        }
+        .title {
+            font-size: 24px;
+            margin: 0;
+            margin-right: 20px;
+        }
+        .search-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-grow: 1;
+            justify-content: center;
+        }
+        #search-input {
+            flex-grow: 1;
+            max-width: 300px;
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        #sort-button, #area-filter {
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            background-color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .user-info {
+            margin-left: 20px;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        .user-info a {
+            color: #3498db;
+            text-decoration: none;
+            margin-left: 10px;
+        }
+        .user-info a:hover {
+            text-decoration: underline;
+        }
+        .card-list {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            justify-content: center;
+        }
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .card-cover-container {
+            width: 100%;
+            padding-top: 75%; /* 4:3 宽高比 */
+            position: relative;
+            overflow: hidden;
+        }
+        .card-cover {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .card-content {
+            padding: 15px;
+        }
+        .card-number {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .card-description {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .card-price {
+            color: #e74c3c;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .card-area {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+        .detail-page {
+            position: fixed;
+            top: 0;
+            right: -33.33%;
+            width: 33.33%;
+            height: 100%;
+            background-color: white;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            transition: 0.3s;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 1000;
+        }
+        .detail-page.open {
+            right: 0;
+        }
+        .detail-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: none;
+            z-index: 999;
+        }
+        .overlay.open {
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            .card-list {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .title {
+                margin-bottom: 15px;
+                text-align: center;
+            }
+            .search-bar {
+                margin-bottom: 15px;
+            }
+            .user-info {
+                margin-left: 0;
+                text-align: center;
+            }
+            .detail-page {
+                width: 100%;
+                right: -100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="main-content">
+            <div class="header">
+                <h1 class="title">老师信息大全</h1>
+                <div class="search-bar">
+                    <input type="text" id="search-input" placeholder="搜索...">
+                    <button id="sort-button">
+                        <span id="sort-icon">↑↓</span>
+                        编号
+                    </button>
+                    <select id="area-filter">
+                        <option value="">所有地区</option>
+                    </select>
+                </div>
+                <% if (typeof user !== 'undefined' && user) { %>
+                    <div class="user-info">
+                        欢迎, <%= user.username %> | <a href="/logout">登出</a>
+                    </div>
+                <% } else { %>
+                    <div class="user-info">
+                        <a href="/login">登录</a> | <a href="/register">注册</a>
+                    </div>
+                <% } %>
+            </div>
+            <div class="card-list" id="card-container"></div>
+        </div>
+    </div>
+    
+    <div class="overlay" id="overlay"></div>
+    <div class="detail-page" id="detail-page">
+        <span class="detail-close" onclick="closeDetail()">&times;</span>
+        <div id="detail-content"></div>
+    </div>
+
+    <script>
+        let cardData = <%- JSON.stringify(content.data) %>;
+        let sortAscending = true;
+        let isDetailOpen = false;
+
+        function populateAreaFilter() {
+            const areaFilter = document.getElementById('area-filter');
+            const areas = [...new Set(cardData.map(card => card.area))];
+            areas.forEach(area => {
+                const option = document.createElement('option');
+                option.value = area;
+                option.textContent = area;
+                areaFilter.appendChild(option);
+            });
+        }
+
+        function renderCards(cards) {
+            const container = document.getElementById('card-container');
+            container.innerHTML = '';
+            cards.forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                cardElement.innerHTML = `
+                    <div class="card-cover-container">
+                        <img src="${card.preview}" alt="卡片${card.id}封面" class="card-cover">
+                    </div>
+                    <div class="card-content">
+                        <div class="card-number">编号：${card.id}</div>
+                        <div class="card-description">${card.simpleInfo}</div>
+                        <div class="card-price">￥${card.price.toFixed(2)}</div>
+                        <div class="card-area">地区：${card.location}</div>
+                    </div>
+                `;
+                cardElement.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openDetail(card);
+                });
+                container.appendChild(cardElement);
+            });
+        }
+
+        function filterAndSortCards() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const selectedArea = document.getElementById('area-filter').value;
+            let filteredCards = cardData.filter(card => 
+                (card.simpleInfo.toLowerCase().includes(searchTerm) || card.id.toString().includes(searchTerm)) &&
+                (selectedArea === '' || card.area === selectedArea)
+            );
+            
+            filteredCards.sort((a, b) => {
+                if (sortAscending) {
+                    return a.id - b.id;
+                } else {
+                    return b.id - a.id;
+                }
+            });
+
+            renderCards(filteredCards);
+        }
+
+        function openDetail(card) {
+            const detailPage = document.getElementById('detail-page');
+            const overlay = document.getElementById('overlay');
+            const detailContent = document.getElementById('detail-content');
+            let detailHtml = `
+                <h2>编号：${card.id}</h2>
+                <img src="${card.preview}" alt="预览图" style="width: 100%; height: auto; object-fit: cover; margin-bottom: 15px;">
+                <p><strong>简介：</strong> ${card.simpleInfo}</p>
+                <p><strong>价格：</strong> ￥${card.price.toFixed(2)}</p>
+                <p><strong>地区：</strong> ${card.location}</p>
+                <p><strong>详情：</strong></p>
+            `;
+
+            card.detail.forEach(item => {
+                if (item.type === 1) {
+                    detailHtml += `<p>${item.content}</p>`;
+                } else if (item.type === 2) {
+                    detailHtml += `<img src="${item.content}" alt="详情图片" style="max-width: 100%; height: auto; margin-bottom: 15px;">`;
+                }
+            });
+
+            detailHtml += `
+                <div class="comment-list">
+                    <h3>评论</h3>
+                    ${card.commnet.map(comment => `<div class="comment">${comment}</div>`).join('')}
+                </div>
+            `;
+
+            detailContent.innerHTML = detailHtml;
+            detailPage.classList.add('open');
+            overlay.classList.add('open');
+            
+            if (!isDetailOpen) {
+                history.pushState({ isDetail: true }, '');
+                isDetailOpen = true;
+            }
+
+            // 手动发送 PV 统计
+            if (window._hmt) {
+                _hmt.push(['_trackPageview', '/detail/' + card.id]);
+            }
+        }
+
+        function closeDetail() {
+            const detailPage = document.getElementById('detail-page');
+            const overlay = document.getElementById('overlay');
+            detailPage.classList.remove('open');
+            overlay.classList.remove('open');
+
+            if (isDetailOpen) {
+                history.back();
+                isDetailOpen = false;
+            }
+        }
+
+        function toggleSort() {
+            sortAscending = !sortAscending;
+            document.getElementById('sort-icon').textContent = sortAscending ? '↑↓' : '↓↑';
+            filterAndSortCards();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            populateAreaFilter();
+            filterAndSortCards();
+
+            document.getElementById('search-input').addEventListener('input', filterAndSortCards);
+            document.getElementById('area-filter').addEventListener('change', filterAndSortCards);
+            document.getElementById('sort-button').addEventListener('click', toggleSort);
+
+            document.addEventListener('click', function(event) {
+                const detailPage = document.getElementById('detail-page');
+                if (detailPage.classList.contains('open') && !detailPage.contains(event.target)) {
+                    closeDetail();
+                }
+            });
+
+            document.getElementById('detail-page').addEventListener('click', function(event) {
+                event.stopPropagation();
+            });
+
+            document.getElementById('overlay').addEventListener('click', closeDetail);
+
+            window.addEventListener('popstate', function(event) {
+                if (event.state && event.state.isDetail) {
+                    // 如果是详情页状态，不做任何操作
+                } else {
+                    // 如果不是详情页状态，关闭详情页
+                    const detailPage = document.getElementById('detail-page');
+                    const overlay = document.getElementById('overlay');
+                    if (detailPage.classList.contains('open')) {
+                        detailPage.classList.remove('open');
+                        overlay.classList.remove('open');
+                        isDetailOpen = false;
+                    }
+                }
+            });
+
+            // 检查 URL 中是否有 id 参数
+            const idParam = new URLSearchParams(window.location.search).get('id');
+            if (idParam) {
+                const card = cardData.find(card => card.id.toString() === idParam);
+                if (card) {
+                    openDetail(card);
+                } else {
+                    console.log('未找到对应 ID 的卡片');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+
+
+    login.ejs
+      内容：
+      <!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+        h1 {
+            text-align: center;
+            color: #1877f2;
+            margin-bottom: 1.5rem;
+        }
+        form div {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #606770;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #dddfe2;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        button {
+            width: 100%;
+            padding: 0.5rem;
+            background-color: #1877f2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #166fe5;
+        }
+        .message {
+            text-align: center;
+            margin-top: 1rem;
+        }
+        .error {
+            color: #ff0000;
+        }
+        .success {
+            color: #00a400;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>登录</h1>
+        <% if (locals.registered) { %>
+            <p class="message success">注册成功，请登录</p>
+        <% } %>
+        <% if (locals.error) { %>
+            <p class="message error"><%= error %></p>
+        <% } %>
+        <form action="/api/users/login" method="POST">
+            <div>
+                <label for="username">用户名：</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div>
+                <label for="password">密码：</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit">登录</button>
+        </form>
+        <p class="message">还没有账号？<a href="/register">注册</a></p>
+    </div>
+</body>
+</html>
+
+
+    register.ejs
+      内容：
+      <!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .register-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+        h1 {
+            text-align: center;
+            color: #1877f2;
+            margin-bottom: 1.5rem;
+        }
+        form div {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #606770;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #dddfe2;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        button {
+            width: 100%;
+            padding: 0.5rem;
+            background-color: #1877f2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #166fe5;
+        }
+        .message {
+            text-align: center;
+            margin-top: 1rem;
+        }
+        .error {
+            color: #ff0000;
+        }
+        .success {
+            color: #00a400;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <h1>注册</h1>
+        <% if (locals.error) { %>
+            <p class="message error"><%= error %></p>
+        <% } %>
+        <form action="/api/users/register" method="POST">
+            <div>
+                <label for="username">用户名：</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div>
+                <label for="password">密码：</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit">注册</button>
+        </form>
+        <p class="message">已有账号？<a href="/login">登录</a></p>
+    </div>
+</body>
+</html>
+
+

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>内容管理</title>
+    <style>
+        /* 添加一些基本样式 */
+    </style>
+</head>
+<body>
+    <h1>内容管理</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>简介</th>
+                <th>价格</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% content.forEach(item => { %>
+                <tr>
+                    <td><%= item.id %></td>
+                    <td><%= item.simpleInfo %></td>
+                    <td><%= item.price %></td>
+                    <td>
+                        <button onclick="editContent(<%= item.id %>)">编辑</button>
+                        <button onclick="deleteContent(<%= item.id %>)">删除</button>
+                    </td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+    <form id="addContentForm">
+        <!-- 添加内容表单字段 -->
+    </form>
+    <script>
+        // 实现添加、编辑和删除内容的前端 JavaScript
+    </script>
+</body>
+</html>

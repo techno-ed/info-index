@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理</title>
+    <style>
+        /* 添加一些基本样式 */
+    </style>
+</head>
+<body>
+    <h1>用户管理</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>用户名</th>
+                <th>邮箱</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% users.forEach(user => { %>
+                <tr>
+                    <td><%= user.id %></td>
+                    <td><%= user.username %></td>
+                    <td><%= user.email %></td>
+                    <td>
+                        <button onclick="deleteUser(<%= user.id %>)">删除</button>
+                    </td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+    <form id="addUserForm">
+        <!-- 添加用户表单字段 -->
+    </form>
+    <script>
+        // 实现添加和删除用户的前端 JavaScript
+    </script>
+</body>
+</html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员仪表板</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .container {
+            display: flex;
+            justify-content: space-between;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 48%;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        form {
+            margin-top: 20px;
+        }
+        input[type="text"], input[type="email"], input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>管理员仪表板</h1>
+    <div class="container">
+        <div class="section">
+            <h2>用户管理</h2>
+            <table id="userTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>用户名</th>
+                        <th>邮箱</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- 用户数据将通过 JavaScript 动态加载 -->
+                </tbody>
+            </table>
+            <form id="addUserForm">
+                <h3>添加新用户</h3>
+                <input type="text" id="username" placeholder="用户名" required>
+                <input type="email" id="email" placeholder="邮箱" required>
+                <input type="password" id="password" placeholder="密码" required>
+                <input type="submit" value="添加用户">
+            </form>
+        </div>
+        <div class="section">
+            <h2>内容管理</h2>
+            <table id="contentTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>简介</th>
+                        <th>价格</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- 内容数据将通过 JavaScript 动态加载 -->
+                </tbody>
+            </table>
+            <form id="addContentForm">
+                <h3>添加新内容</h3>
+                <input type="text" id="simpleInfo" placeholder="简介" required>
+                <input type="number" id="price" placeholder="价格" required>
+                <input type="submit" value="添加内容">
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 加载用户数据
+        function loadUsers() {
+            fetch('/admin/users')
+                .then(response => response.json())
+                .then(users => {
+                    const tbody = document.querySelector('#userTable tbody');
+                    tbody.innerHTML = '';
+                    users.forEach(user => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${user.id}</td>
+                                <td>${user.username}</td>
+                                <td>${user.email}</td>
+                                <td><button onclick="deleteUser(${user.id})">删除</button></td>
+                            </tr>
+                        `;
+                    });
+                });
+        }
+
+        // 加载内容数据
+        function loadContent() {
+            fetch('/admin/content')
+                .then(response => response.json())
+                .then(content => {
+                    const tbody = document.querySelector('#contentTable tbody');
+                    tbody.innerHTML = '';
+                    content.forEach(item => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${item.id}</td>
+                                <td>${item.simpleInfo}</td>
+                                <td>${item.price}</td>
+                                <td>
+                                    <button onclick="editContent(${item.id})">编辑</button>
+                                    <button onclick="deleteContent(${item.id})">删除</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                });
+        }
+
+        // 删除用户
+        function deleteUser(id) {
+            if (confirm('确定要删除这个用户吗？')) {
+                fetch(`/admin/users/${id}`, { method: 'DELETE' })
+                    .then(() => loadUsers());
+            }
+        }
+
+        // 删除内容
+        function deleteContent(id) {
+            if (confirm('确定要删除这个内容吗？')) {
+                fetch(`/admin/content/${id}`, { method: 'DELETE' })
+                    .then(() => loadContent());
+            }
+        }
+
+        // 添加用户
+        document.getElementById('addUserForm').onsubmit = function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            fetch('/admin/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, password })
+            }).then(() => {
+                loadUsers();
+                this.reset();
+            });
+        };
+
+        // 添加内容
+        document.getElementById('addContentForm').onsubmit = function(e) {
+            e.preventDefault();
+            const simpleInfo = document.getElementById('simpleInfo').value;
+            const price = document.getElementById('price').value;
+            fetch('/admin/content', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ simpleInfo, price })
+            }).then(() => {
+                loadContent();
+                this.reset();
+            });
+        };
+
+        // 初始加载数据
+        loadUsers();
+        loadContent();
+    </script>
+</body>
+</html>

@@ -213,7 +213,11 @@ var _hmt = _hmt || [];
                         <option value="">所有地区</option>
                     </select>
                 </div>
-                <% if (typeof user !== 'undefined' && user) { %>
+                <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
+                    <div class="user-info">
+                        欢迎, <%= user.username %> | <a href="/logout">登出</a> | <a href="/admin">管理页面</a>
+                    </div>
+                <% } else if (typeof user !== 'undefined' && user) { %>
                     <div class="user-info">
                         欢迎, <%= user.username %> | <a href="/logout">登出</a>
                     </div>
