@@ -84,7 +84,7 @@
                     <tr>
                         <th>ID</th>
                         <th>用户名</th>
-                        <th>邮箱</th>
+                        <th>角色</th>
                         <th>操作</th>
                     </tr>
                 </thead>
@@ -95,7 +95,11 @@
             <form id="addUserForm">
                 <h3>添加新用户</h3>
                 <input type="text" id="username" placeholder="用户名" required>
-                <input type="email" id="email" placeholder="邮箱" required>
+                <select id="role" required>
+                    <option value="">选择角色</option>
+                    <option value="user">普通用户</option>
+                    <option value="admin">管理员</option>
+                </select>
                 <input type="password" id="password" placeholder="密码" required>
                 <input type="submit" value="添加用户">
             </form>
@@ -137,12 +141,13 @@
                             <tr>
                                 <td>${user.id}</td>
                                 <td>${user.username}</td>
-                                <td>${user.email}</td>
+                                <td>${user.role}</td>
                                 <td><button onclick="deleteUser(${user.id})">删除</button></td>
                             </tr>
                         `;
                     });
-                });
+                })
+                .catch(error => console.error('Error loading users:', error));
         }
 
         // 加载内容数据
@@ -188,15 +193,24 @@
         document.getElementById('addUserForm').onsubmit = function(e) {
             e.preventDefault();
             const username = document.getElementById('username').value;
-            const email = document.getElementById('email').value;
+            const role = document.getElementById('role').value;
             const password = document.getElementById('password').value;
             fetch('/admin/users', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, email, password })
-            }).then(() => {
-                loadUsers();
-                this.reset();
+                body: JSON.stringify({ username, role, password })
+            }).then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    loadUsers();
+                    this.reset();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('添加用户失败');
             });
         };
 
