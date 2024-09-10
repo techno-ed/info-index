@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const Content = require('../models/Content');
+const isAdmin = require('../middlewares/isAdmin');
+
+// 将 isAdmin 中间件应用到所有管理员路由
+router.use(isAdmin);
 
 // 管理员仪表板
 router.get('/', (req, res) => {
