@@ -64,7 +64,7 @@
         input[type="submit"] {
             background-color: #4CAF50;
             color: white;
-            padding: 10px 15px;
+            padding: 10px 20px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
@@ -132,15 +132,36 @@
                     <!-- 内容数据将通过 JavaScript 动态加载 -->
                 </tbody>
             </table>
-            <form id="addContentForm">
+            <form id="addContentForm" enctype="multipart/form-data">
                 <h3>添加新内容</h3>
-                <input type="text" id="simpleInfo" placeholder="简介" required>
-                <input type="text" id="preview" placeholder="预览" required>
-                <input type="text" id="location" placeholder="位置" required>
-                <input type="number" id="price" placeholder="价格" required>
-                <input type="text" id="area" placeholder="区域" required>
-                <textarea id="detail" placeholder="详细信息 (JSON格式)" required></textarea>
-                <textarea id="commnet" placeholder="评论 (JSON格式)" required></textarea>
+                <div>
+                    <label for="simpleInfo">简介:</label>
+                    <input type="text" id="simpleInfo" name="simpleInfo" placeholder="简介" required>
+                </div>
+                <div>
+                    <label for="preview">预览:</label>
+                    <input type="file" id="preview" name="preview" accept="image/*" required>
+                </div>
+                <div>
+                    <label for="location">位置:</label>
+                    <input type="text" id="location" name="location" placeholder="位置" required>
+                </div>
+                <div>
+                    <label for="price">价格:</label>
+                    <input type="number" id="price" name="price" placeholder="价格" required>
+                </div>
+                <div>
+                    <label for="area">区域:</label>
+                    <input type="text" id="area" name="area" placeholder="区域" required>
+                </div>
+                <div>
+                    <label for="detail">详细信息:</label>
+                    <textarea id="detail" name="detail" placeholder="详细信息 (JSON格式)" required></textarea>
+                </div>
+                <div>
+                    <label for="commnet">评论:</label>
+                    <textarea id="commnet" name="commnet" placeholder="评论 (JSON格式)" required></textarea>
+                </div>
                 <input type="submit" value="添加内容">
             </form>
         </div>
@@ -238,18 +259,11 @@
         // 添加内容
         document.getElementById('addContentForm').onsubmit = function(e) {
             e.preventDefault();
-            const simpleInfo = document.getElementById('simpleInfo').value;
-            const preview = document.getElementById('preview').value;
-            const location = document.getElementById('location').value;
-            const price = parseFloat(document.getElementById('price').value);
-            const area = document.getElementById('area').value;
-            const detail = JSON.parse(document.getElementById('detail').value);
-            const commnet = JSON.parse(document.getElementById('commnet').value);
+            const formData = new FormData(this);
 
             fetch('/admin/content', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ simpleInfo, preview, location, price, area, detail, commnet })
+                body: formData
             }).then(response => response.json())
             .then(data => {
                 if (data.error) {

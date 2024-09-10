@@ -3,6 +3,9 @@ const router = express.Router();
 const User = require('../models/User');
 const Content = require('../models/Content');
 const isAdmin = require('../middlewares/isAdmin');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 // 将 isAdmin 中间件应用到所有管理员路由
 router.use(isAdmin);
@@ -66,15 +69,37 @@ router.get('/content', async (req, res) => {
     }
 });
 
+// 配置 multer 存储
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'public/uploads/')
+    },
+    filename: function (req, file, cb) {
+        cb(null, Date.now() + path.extname(file.originalname))
+    }
+});
+
+const upload = multer({ storage: storage });
+
 // 添加新内容
-router.post('/content', async (req, res) => {
-    const { simpleInfo, preview, location, price, area, detail, commnet } = req.body;
+router.post('/content', upload.single('preview'), async (req, res) => {
     try {
+        const { simpleInfo, location, price, area, detail, commnet } = req.body;
+        const preview = req.file ? `/uploads/${req.file.filename}` : null;
+
         const newContent = await Content.create({ 
-            simpleInfo, preview, location, price, area, detail, commnet 
+            simpleInfo, 
+            preview, 
+            location, 
+            price: parseFloat(price), 
+            area, 
+            detail: JSON.parse(detail), 
+            commnet: JSON.parse(commnet)
         });
+
         res.status(201).json({ message: '内容创建成功', content: newContent });
     } catch (error) {
+        console.error('Error creating content:', error);
         res.status(500).json({ error: '创建内容失败' });
     }
 });

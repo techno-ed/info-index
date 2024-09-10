@@ -13,7 +13,7 @@ const Content = sequelize.define('Content', {
   },
   preview: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: true
   },
   location: {
     type: DataTypes.STRING,
