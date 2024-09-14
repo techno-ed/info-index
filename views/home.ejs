@@ -195,6 +195,54 @@ var _hmt = _hmt || [];
                 right: -100%;
             }
         }
+
+        /* 添加新的样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 300px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .user-link {
+            color: #3498db;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .user-link:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 
@@ -219,7 +267,7 @@ var _hmt = _hmt || [];
                     </div>
                 <% } else if (typeof user !== 'undefined' && user) { %>
                     <div class="user-info">
-                        欢迎, <%= user.username %> | <a href="/logout">登出</a>
+                        欢迎, <a href="#" class="user-link" onclick="showUserPoints()"><%= user.username %></a> | <a href="/logout">登出</a>
                     </div>
                 <% } else { %>
                     <div class="user-info">
@@ -235,6 +283,15 @@ var _hmt = _hmt || [];
     <div class="detail-page" id="detail-page">
         <span class="detail-close" onclick="closeDetail()">&times;</span>
         <div id="detail-content"></div>
+    </div>
+
+    <!-- 用户积分模态框 -->
+    <div id="userPointsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeUserPointsModal()">&times;</span>
+            <h2>用户积分</h2>
+            <p>您当前的积分: <span id="userPointsDisplay"></span></p>
+        </div>
     </div>
 
     <script>
@@ -303,7 +360,7 @@ var _hmt = _hmt || [];
             const detailContent = document.getElementById('detail-content');
             
             let detailHtml = `
-                <h2>编号��${card.id}</h2>
+                <h2>编号${card.id}</h2>
                 <img src="${card.preview}" alt="预览图" style="width: 100%; height: auto; object-fit: cover; margin-bottom: 15px;">
                 <p><strong>简介：</strong> ${card.simpleInfo}</p>
                 <p><strong>价格：</strong> ￥${card.price.toFixed(2)}</p>
@@ -355,6 +412,29 @@ var _hmt = _hmt || [];
             sortAscending = !sortAscending;
             document.getElementById('sort-icon').textContent = sortAscending ? '↑↓' : '↓↑';
             filterAndSortCards();
+        }
+
+        // 添加新的函数来显示和关闭用户积分模态框
+        function showUserPoints() {
+            fetch('/api/user/points')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('userPointsDisplay').textContent = data.points;
+                    document.getElementById('userPointsModal').style.display = 'block';
+                })
+                .catch(error => console.error('Error fetching user points:', error));
+        }
+
+        function closeUserPointsModal() {
+            document.getElementById('userPointsModal').style.display = 'none';
+        }
+
+        // 点击模态框外部时关闭模态框
+        window.onclick = function(event) {
+            var modal = document.getElementById('userPointsModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
         }
 
         document.addEventListener('DOMContentLoaded', function() {

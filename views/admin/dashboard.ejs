@@ -109,6 +109,7 @@
                             <th>ID</th>
                             <th>用户名</th>
                             <th>角色</th>
+                            <th>积分</th>
                             <th>操作</th>
                         </tr>
                     </thead>
@@ -167,12 +168,66 @@
                                 <td>${user.id}</td>
                                 <td>${user.username}</td>
                                 <td>${user.role}</td>
+                                <td>
+                                    <span id="points-${user.id}">${user.points}</span>
+                                    <input type="number" id="edit-points-${user.id}" style="display:none;">
+                                    <button onclick="editPoints(${user.id})">编辑</button>
+                                    <button onclick="savePoints(${user.id})" style="display:none;">保存</button>
+                                </td>
                                 <td><button onclick="deleteUser(${user.id})">删除</button></td>
                             </tr>
                         `;
                     });
                 })
                 .catch(error => console.error('Error loading users:', error));
+        }
+
+        // 编辑积分
+        function editPoints(userId) {
+            const pointsSpan = document.getElementById(`points-${userId}`);
+            const pointsInput = document.getElementById(`edit-points-${userId}`);
+            const editButton = pointsSpan.nextElementSibling.nextElementSibling;
+            const saveButton = editButton.nextElementSibling;
+
+            pointsSpan.style.display = 'none';
+            pointsInput.style.display = 'inline';
+            pointsInput.value = pointsSpan.textContent;
+            editButton.style.display = 'none';
+            saveButton.style.display = 'inline';
+        }
+
+        // 保存积分
+        function savePoints(userId) {
+            const pointsInput = document.getElementById(`edit-points-${userId}`);
+            const newPoints = pointsInput.value;
+
+            console.log(`尝试更新用户 ${userId} 的积分为 ${newPoints}`);
+
+            fetch(`/admin/users/${userId}/points`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ points: newPoints }),
+            })
+            .then(response => {
+                console.log('服务器响应状态:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('服务器响应数据:', data);
+                if (data.success) {
+                    console.log(`成功更新用户 ${userId} 的积分为 ${newPoints}`);
+                    loadUsers();  // 重新加载用户列表
+                } else {
+                    console.error('更新积分失败:', data.error);
+                    alert('更新积分失败: ' + (data.error || '未知错误'));
+                }
+            })
+            .catch(error => {
+                console.error('更新积分时发生错误:', error);
+                alert('更新积分失败: ' + error.message);
+            });
         }
 
         // 修改加载内容的函数

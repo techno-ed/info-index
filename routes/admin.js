@@ -23,7 +23,7 @@ router.get('/users', async (req, res) => {
             throw new Error('User model is not properly defined');
         }
         const users = await User.findAll({
-            attributes: ['id', 'username', 'role']
+            attributes: ['id', 'username', 'role', 'points']
         });
         console.log('Users fetched:', users);
         res.json(users);
@@ -195,6 +195,40 @@ router.post('/upload-image', upload.single('image'), (req, res) => {
         res.json({ url: '/uploads/' + req.file.filename });
     } else {
         res.status(400).json({ error: '上传失败' });
+    }
+});
+
+// 确保这个路由已经定义
+router.put('/users/:id/points', async (req, res) => {
+    console.log('收到更新积分请求:', req.params, req.body);
+    try {
+        const { id } = req.params;
+        const { points } = req.body;
+
+        // 验证积分是否为有效数字
+        if (isNaN(points) || points < 0) {
+            return res.status(400).json({ error: '无效的积分值' });
+        }
+
+        console.log(`尝试更新用户 ${id} 的积分为 ${points}`);
+
+        const user = await User.findByPk(id);
+        if (!user) {
+            console.log(`未找到 ID 为 ${id} 的用户`);
+            return res.status(404).json({ error: '未找到用户' });
+        }
+
+        console.log(`找到用户:`, user.toJSON());
+
+        // 更新用户积分
+        user.points = parseInt(points, 10);
+        await user.save();
+
+        console.log(`成功更新用户 ${id} 的积分为 ${points}`);
+        res.json({ success: true, message: '积分更新成功', user: { id: user.id, username: user.username, points: user.points } });
+    } catch (error) {
+        console.error('更新用户积分时发生错误:', error);
+        res.status(500).json({ error: '更新积分失败', details: error.message });
     }
 });
 

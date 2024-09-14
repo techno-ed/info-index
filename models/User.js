@@ -15,6 +15,10 @@ const User = sequelize.define('User', {
   role: {
     type: DataTypes.ENUM('user', 'admin'),
     defaultValue: 'user'
+  },
+  points: {  // 新增积分字段
+    type: DataTypes.INTEGER,
+    defaultValue: 0
   }
 }, {
   hooks: {

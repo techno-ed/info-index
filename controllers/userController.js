@@ -72,3 +72,29 @@ exports.logout = (req, res) => {
     res.clearCookie('token');
     res.redirect('/login');
 };
+
+exports.getUserPoints = async (req, res) => {
+    try {
+        // 从 cookie 中获取 token
+        const token = req.cookies.token;
+        if (!token) {
+            return res.status(401).json({ error: '未登录' });
+        }
+
+        // 验证 token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const userId = decoded.id;
+
+        // 查找用户
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({ error: '用户不存在' });
+        }
+
+        // 返回用户积分
+        res.json({ points: user.points });
+    } catch (error) {
+        console.error('获取用户积分错误:', error);
+        res.status(500).json({ error: '获取积分失败，请稍后再试' });
+    }
+};
