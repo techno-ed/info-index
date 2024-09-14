@@ -308,20 +308,13 @@ var _hmt = _hmt || [];
                 <p><strong>价格：</strong> ￥${card.price.toFixed(2)}</p>
                 <p><strong>地区：</strong> ${card.location}</p>
                 <p><strong>详情：</strong></p>
+                <p>${card.detail}</p>
             `;
-
-            card.detail.forEach(item => {
-                if (item.type === 1) {
-                    detailHtml += `<p>${item.content}</p>`;
-                } else if (item.type === 2) {
-                    detailHtml += `<img src="${item.content}" alt="详情图片" style="max-width: 100%; height: auto; margin-bottom: 15px;">`;
-                }
-            });
 
             detailHtml += `
                 <div class="comment-list">
                     <h3>评论</h3>
-                    ${card.commnet.map(comment => `<div class="comment">${comment}</div>`).join('')}
+                    ${Array.isArray(card.commnet) ? card.commnet.map(comment => `<div class="comment">${comment}</div>`).join('') : '暂无评论'}
                 </div>
             `;
 

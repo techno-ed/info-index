@@ -54,3 +54,20 @@ sequelize.sync().then(() => {
     console.log(`服务器运行在端口 ${PORT}`);
   });
 });
+
+// 错误处理中间件
+app.use((err, req, res, next) => {
+  // 设置局部变量，只在开发中提供错误
+  res.locals.message = err.message;
+  res.locals.error = req.app.get('env') === 'development' ? err : {};
+
+  // 设置状态码
+  res.status(err.status || 500);
+
+  // 渲染错误页面
+  res.render('error', {
+    message: err.message,
+    error: err,
+    status: err.status || 500  // 确保传递 status
+  });
+});

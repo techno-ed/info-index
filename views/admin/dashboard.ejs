@@ -116,6 +116,7 @@
         </div>
         <div class="section">
             <h2>内容管理</h2>
+            <button onclick="location.href='/admin/content/add'">添加新内容</button>
             <table id="contentTable">
                 <thead>
                     <tr>
@@ -132,38 +133,6 @@
                     <!-- 内容数据将通过 JavaScript 动态加载 -->
                 </tbody>
             </table>
-            <form id="addContentForm" enctype="multipart/form-data">
-                <h3>添加新内容</h3>
-                <div>
-                    <label for="simpleInfo">简介:</label>
-                    <input type="text" id="simpleInfo" name="simpleInfo" placeholder="简介" required>
-                </div>
-                <div>
-                    <label for="preview">预览:</label>
-                    <input type="file" id="preview" name="preview" accept="image/*" required>
-                </div>
-                <div>
-                    <label for="location">位置:</label>
-                    <input type="text" id="location" name="location" placeholder="位置" required>
-                </div>
-                <div>
-                    <label for="price">价格:</label>
-                    <input type="number" id="price" name="price" placeholder="价格" required>
-                </div>
-                <div>
-                    <label for="area">区域:</label>
-                    <input type="text" id="area" name="area" placeholder="区域" required>
-                </div>
-                <div>
-                    <label for="detail">详细信息:</label>
-                    <textarea id="detail" name="detail" placeholder="详细信息 (JSON格式)" required></textarea>
-                </div>
-                <div>
-                    <label for="commnet">评论:</label>
-                    <textarea id="commnet" name="commnet" placeholder="评论 (JSON格式)" required></textarea>
-                </div>
-                <input type="submit" value="添加内容">
-            </form>
         </div>
     </div>
 
@@ -189,31 +158,52 @@
                 .catch(error => console.error('Error loading users:', error));
         }
 
-        // 加载内容数据
+        // 修改加载内容的函数
         function loadContent() {
+            console.log('开始加载内容');
             fetch('/admin/content')
-                .then(response => response.json())
+                .then(response => {
+                    console.log('收到响应:', response);
+                    return response.json();
+                })
                 .then(content => {
+                    console.log('解析后的内容:', content);
                     const tbody = document.querySelector('#contentTable tbody');
                     tbody.innerHTML = '';
-                    content.forEach(item => {
-                        tbody.innerHTML += `
-                            <tr>
-                                <td>${item.id}</td>
-                                <td>${item.simpleInfo}</td>
-                                <td>${item.preview}</td>
-                                <td>${item.location}</td>
-                                <td>${item.price}</td>
-                                <td>${item.area}</td>
-                                <td>
-                                    <button onclick="editContent(${item.id})">编辑</button>
-                                    <button onclick="deleteContent(${item.id})">删除</button>
-                                </td>
-                            </tr>
-                        `;
-                    });
+                    if (Array.isArray(content) && content.length > 0) {
+                        content.forEach(item => {
+                            console.log('处理项目:', item);
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td>${item.id}</td>
+                                    <td>${item.simpleInfo || ''}</td>
+                                    <td>${item.preview || '无预览图'}</td>
+                                    <td>${item.location || ''}</td>
+                                    <td>${item.price || ''}</td>
+                                    <td>${item.area || ''}</td>
+                                    <td>
+                                        <button onclick="window.open('/admin/content/edit/${item.id}', '_blank')">编辑</button>
+                                        <button onclick="deleteContent(${item.id})">删除</button>
+                                        <div>详情: ${item.detail ? item.detail.substring(0, 50) : 'N/A'}...</div>
+                                        <div>评论数: ${item.commnet ? JSON.parse(item.commnet).length : 0}</div>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        console.log('没有内容或内容不是数组');
+                        tbody.innerHTML = '<tr><td colspan="7">没有找到内容</td></tr>';
+                    }
+                })
+                .catch(error => {
+                    console.error('加载内容时出错:', error);
+                    const tbody = document.querySelector('#contentTable tbody');
+                    tbody.innerHTML = `<tr><td colspan="7">加载内容时出错: ${error.message}</td></tr>`;
                 });
         }
+
+        // 确保在页面加载完成后调用 loadContent
+        document.addEventListener('DOMContentLoaded', loadContent);
 
         // 删除用户
         function deleteUser(id) {
@@ -253,29 +243,6 @@
             .catch(error => {
                 console.error('Error:', error);
                 alert('添加用户失败');
-            });
-        };
-
-        // 添加内容
-        document.getElementById('addContentForm').onsubmit = function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-
-            fetch('/admin/content', {
-                method: 'POST',
-                body: formData
-            }).then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert(data.error);
-                } else {
-                    loadContent();
-                    this.reset();
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('添加内容失败');
             });
         };
 

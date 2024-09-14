@@ -28,7 +28,7 @@ const Content = sequelize.define('Content', {
     allowNull: false
   },
   detail: {
-    type: DataTypes.JSON,
+    type: DataTypes.TEXT,
     allowNull: false
   },
   commnet: {

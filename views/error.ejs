@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>错误 - <%= status %></title>
+    <title>错误 - <%= status || '未知错误' %></title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -45,11 +45,11 @@
 </head>
 <body>
     <div class="error-container">
-        <h1>出错了 - <%= status %></h1>
+        <h1>错误 <%= status || '未知错误' %></h1>
         <div class="error-details">
             <p><%= message %></p>
         </div>
-        <% if (error.stack && process.env.NODE_ENV === 'development') { %>
+        <% if (error && error.stack) { %>
             <pre><%= error.stack %></pre>
         <% } %>
         <a href="/" class="back-link">返回首页</a>

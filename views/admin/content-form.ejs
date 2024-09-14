@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= contentId ? '编辑内容' : '添加新内容' %></title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="number"],
+        input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        #detailEditor {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 5px;
+            min-height: 100px;
+        }
+        button {
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            margin-top: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .commentItem {
+            display: flex;
+            margin-top: 5px;
+        }
+        .commentItem input {
+            flex-grow: 1;
+            margin-right: 5px;
+        }
+        #previewImage {
+            max-width: 200px;
+            margin-top: 10px;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background-color: #3498db;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-secondary {
+            background-color: #95a5a6;
+            color: #fff;
+        }
+
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><%= contentId ? '编辑内容' : '添加新内容' %></h1>
+        <form id="contentForm" enctype="multipart/form-data">
+            <input type="hidden" id="contentId" value="<%= contentId || '' %>">
+            <div>
+                <label for="simpleInfo">简介:</label>
+                <input type="text" id="simpleInfo" name="simpleInfo" required>
+            </div>
+            <div>
+                <label for="preview">预览:</label>
+                <input type="file" id="preview" name="preview" accept="image/*" <%= contentId ? '' : 'required' %>>
+                <% if (contentId) { %>
+                    <img id="previewImage" src="" alt="当前预览图" style="max-width:200px;">
+                <% } %>
+            </div>
+            <div>
+                <label for="location">位置:</label>
+                <input type="text" id="location" name="location" required>
+            </div>
+            <div>
+                <label for="price">价格:</label>
+                <input type="number" id="price" name="price" required>
+            </div>
+            <div>
+                <label for="area">区域:</label>
+                <input type="text" id="area" name="area" required>
+            </div>
+            <div>
+                <label for="detailEditor">详细信息:</label>
+                <div id="detailEditor" contenteditable="true"></div>
+                <input type="file" id="detailImage" accept="image/*">
+                <button type="button" onclick="insertImage()">插入图片</button>
+            </div>
+            <div>
+                <label for="commentList">评论:</label>
+                <div id="commentList"></div>
+                <button type="button" onclick="addCommentInput()">添加评论</button>
+            </div>
+            <div class="button-group">
+                <button type="button" class="btn btn-secondary" onclick="window.close()">返回</button>
+                <button type="submit" class="btn btn-primary"><%= contentId ? '更新内容' : '添加内容' %></button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const contentId = document.getElementById('contentId').value;
+
+        // 如果是编辑模式,加载现有内容
+        if (contentId) {
+            fetch(`/admin/content/${contentId}`)
+                .then(response => response.json())
+                .then(content => {
+                    document.getElementById('simpleInfo').value = content.simpleInfo;
+                    document.getElementById('location').value = content.location;
+                    document.getElementById('price').value = content.price;
+                    document.getElementById('area').value = content.area;
+                    document.getElementById('detailEditor').innerHTML = JSON.parse(content.detail);
+                    document.getElementById('previewImage').src = content.preview;
+                    
+                    const comments = JSON.parse(content.commnet);
+                    comments.forEach(comment => addCommentInput(comment));
+                });
+        }
+
+        function insertImage() {
+            const input = document.getElementById('detailImage');
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    document.getElementById('detailEditor').appendChild(img);
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function addCommentInput(value = '') {
+            const commentList = document.getElementById('commentList');
+            const commentItem = document.createElement('div');
+            commentItem.className = 'commentItem';
+            commentItem.innerHTML = `
+                <input type="text" value="${value}" placeholder="输入评论">
+                <button type="button" onclick="this.parentElement.remove()">删除</button>
+            `;
+            commentList.appendChild(commentItem);
+        }
+
+        document.getElementById('contentForm').onsubmit = function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+
+            // 处理详情
+            const detailEditor = document.getElementById('detailEditor');
+            formData.set('detail', JSON.stringify(detailEditor.innerHTML));
+
+            // 处理评论
+            const comments = Array.from(document.querySelectorAll('#commentList input'))
+                .map(input => input.value)
+                .filter(comment => comment.trim() !== '');
+            formData.set('commnet', JSON.stringify(comments));
+
+            const url = contentId ? `/admin/content/${contentId}` : '/admin/content';
+            const method = contentId ? 'PUT' : 'POST';
+
+            fetch(url, { method, body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                    } else {
+                        alert(contentId ? '内容更新成功' : '内容添加成功');
+                        window.opener.location.reload(); // 刷新父窗口
+                        window.close(); // 关闭当前窗口
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('操作失败');
+                });
+        };
+    </script>
+</body>
+</html>

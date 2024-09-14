@@ -62,9 +62,12 @@ router.delete('/users/:id', async (req, res) => {
 // 获取所有内容
 router.get('/content', async (req, res) => {
     try {
+        console.log('正在获取内容');
         const content = await Content.findAll();
+        console.log('获取到的内容:', JSON.stringify(content, null, 2));
         res.json(content);
     } catch (error) {
+        console.error('获取内容列表失败:', error);
         res.status(500).json({ error: '获取内容列表失败' });
     }
 });
@@ -93,8 +96,8 @@ router.post('/content', upload.single('preview'), async (req, res) => {
             location, 
             price: parseFloat(price), 
             area, 
-            detail: JSON.parse(detail), 
-            commnet: JSON.parse(commnet)
+            detail: detail || '', // 直接存储为字符串
+            commnet: JSON.stringify(commnet) // 评论仍然保持 JSON 字符串格式
         });
 
         res.status(201).json({ message: '内容创建成功', content: newContent });
@@ -104,18 +107,66 @@ router.post('/content', upload.single('preview'), async (req, res) => {
     }
 });
 
-// 更新内容
-router.put('/content/:id', async (req, res) => {
-    const { id } = req.params;
-    const { simpleInfo, preview, location, price, area, detail, commnet } = req.body;
+// 添加新内容路由
+router.get('/content/add', (req, res) => {
+    console.log('访问添加内容页面');
+    res.render('admin/content-form', { title: '添加新内容', contentId: null });
+});
+
+// 编辑内容路由
+router.get('/content/edit/:id', (req, res) => {
+    res.render('admin/content-form', { contentId: req.params.id });
+});
+
+// 获取单个内容
+router.get('/content/:id', async (req, res) => {
     try {
-        await Content.update(
-            { simpleInfo, preview, location, price, area, detail, commnet },
-            { where: { id } }
-        );
-        res.json({ message: '内容更新成功' });
+        const content = await Content.findByPk(req.params.id);
+        if (content) {
+            res.json(content);
+        } else {
+            res.status(404).json({ error: '内容不存在' });
+        }
     } catch (error) {
-        res.status(500).json({ error: '新内容失败' });
+        console.error('Error fetching content:', error);
+        res.status(500).json({ error: '获取内容失败' });
+    }
+});
+
+// 更新内容
+router.put('/content/:id', upload.single('preview'), async (req, res) => {
+    try {
+        const content = await Content.findByPk(req.params.id);
+        if (!content) {
+            return res.status(404).json({ error: '内容不存在' });
+        }
+
+        const { simpleInfo, location, price, area, detail, commnet } = req.body;
+        const updateData = { 
+            simpleInfo, 
+            location, 
+            price: parseFloat(price), 
+            area, 
+            detail: detail || '', // 直接存储为字符串
+            commnet: JSON.stringify(commnet) // 评论仍然保持 JSON 字符串格式
+        };
+
+        if (req.file) {
+            updateData.preview = `/uploads/${req.file.filename}`;
+            // 删除旧的预览图
+            if (content.preview) {
+                const oldPath = path.join(__dirname, '..', 'public', content.preview);
+                fs.unlink(oldPath, err => {
+                    if (err) console.error('Error deleting old preview:', err);
+                });
+            }
+        }
+
+        await content.update(updateData);
+        res.json({ message: '内容更新成功', content });
+    } catch (error) {
+        console.error('Error updating content:', error);
+        res.status(500).json({ error: '更新内容失败' });
     }
 });
 
@@ -128,6 +179,12 @@ router.delete('/content/:id', async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: '删除内容失败' });
     }
+});
+
+// 通用的日志中间件
+router.use((req, res, next) => {
+    console.log('Admin 路由收到请求:', req.method, req.url);
+    next();
 });
 
 module.exports = router;
