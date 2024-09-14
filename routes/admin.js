@@ -73,16 +73,17 @@ router.get('/content', async (req, res) => {
 });
 
 // 配置 multer 存储
-const storage = multer.diskStorage({
+const imageStorage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, 'public/uploads/')
+        cb(null, path.join(__dirname, '../public/uploads/'))
     },
     filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname))
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname))
     }
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({ storage: imageStorage });
 
 // 添加新内容
 router.post('/content', upload.single('preview'), async (req, res) => {
@@ -185,6 +186,16 @@ router.delete('/content/:id', async (req, res) => {
 router.use((req, res, next) => {
     console.log('Admin 路由收到请求:', req.method, req.url);
     next();
+});
+
+// 图片上传路由
+router.post('/upload-image', upload.single('image'), (req, res) => {
+    if (req.file) {
+        // 返回上传后的图片 URL
+        res.json({ url: '/uploads/' + req.file.filename });
+    } else {
+        res.status(400).json({ error: '上传失败' });
+    }
 });
 
 module.exports = router;

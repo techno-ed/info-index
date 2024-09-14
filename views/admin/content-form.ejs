@@ -184,13 +184,39 @@
             const input = document.getElementById('detailImage');
             const file = input.files[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    document.getElementById('detailEditor').appendChild(img);
-                }
-                reader.readAsDataURL(file);
+                const formData = new FormData();
+                formData.append('image', file);
+
+                // 显示上传进度
+                const progressBar = document.createElement('div');
+                progressBar.style.width = '0%';
+                progressBar.style.height = '5px';
+                progressBar.style.backgroundColor = 'blue';
+                document.getElementById('detailEditor').appendChild(progressBar);
+
+                fetch('/admin/upload-image', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.url) {
+                        const img = document.createElement('img');
+                        img.src = data.url;
+                        img.style.maxWidth = '100%';
+                        document.getElementById('detailEditor').appendChild(img);
+                    } else {
+                        alert('图片上传失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('图片上传失败');
+                })
+                .finally(() => {
+                    // 移除进度条
+                    progressBar.remove();
+                });
             }
         }
 
@@ -211,13 +237,13 @@
 
             // 处理详情
             const detailEditor = document.getElementById('detailEditor');
-            formData.set('detail', JSON.stringify(detailEditor.innerHTML));
+            formData.set('detail', detailEditor.innerHTML);  // 直接设置 HTML 内容，不使用 JSON.stringify
 
             // 处理评论
             const comments = Array.from(document.querySelectorAll('#commentList input'))
                 .map(input => input.value)
                 .filter(comment => comment.trim() !== '');
-            formData.set('commnet', JSON.stringify(comments));
+            formData.set('commnet', JSON.stringify(comments));  // 评论仍然需要 JSON.stringify，因为它是一个数组
 
             const url = contentId ? `/admin/content/${contentId}` : '/admin/content';
             const method = contentId ? 'PUT' : 'POST';
@@ -228,16 +254,37 @@
                     if (data.error) {
                         alert(data.error);
                     } else {
-                        alert(contentId ? '内容更新成功' : '内容添加成功');
-                        window.opener.location.reload(); // 刷新父窗口
-                        window.close(); // 关闭当前窗口
+                        if (contentId) {
+                            // 更新成功，关闭页面
+                            alert('内容更新成功');
+                            window.opener.location.reload(); // 刷新父窗口
+                            window.close(); // 关闭当前窗口
+                        } else {
+                            // 添加成功，清除表单
+                            alert('内容添加成功');
+                            clearForm();
+                            window.opener.location.reload(); // 刷新父窗口
+                        }
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('操作失败');
                 });
         };
+
+        // 添加清除表单的函数
+        function clearForm() {
+            document.getElementById('simpleInfo').value = '';
+            document.getElementById('preview').value = '';
+            document.getElementById('location').value = '';
+            document.getElementById('price').value = '';
+            document.getElementById('area').value = '';
+            document.getElementById('detailEditor').innerHTML = '';
+            document.getElementById('commentList').innerHTML = '';
+            if (document.getElementById('previewImage')) {
+                document.getElementById('previewImage').src = '';
+            }
+        }
     </script>
 </body>
 </html>

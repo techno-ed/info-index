@@ -210,7 +210,7 @@ var _hmt = _hmt || [];
                         编号
                     </button>
                     <select id="area-filter">
-                        <option value="">所有地区</option>
+                        <option value="">所有地</option>
                     </select>
                 </div>
                 <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
@@ -301,14 +301,15 @@ var _hmt = _hmt || [];
             const detailPage = document.getElementById('detail-page');
             const overlay = document.getElementById('overlay');
             const detailContent = document.getElementById('detail-content');
+            
             let detailHtml = `
-                <h2>编号：${card.id}</h2>
+                <h2>编号��${card.id}</h2>
                 <img src="${card.preview}" alt="预览图" style="width: 100%; height: auto; object-fit: cover; margin-bottom: 15px;">
                 <p><strong>简介：</strong> ${card.simpleInfo}</p>
                 <p><strong>价格：</strong> ￥${card.price.toFixed(2)}</p>
                 <p><strong>地区：</strong> ${card.location}</p>
                 <p><strong>详情：</strong></p>
-                <p>${card.detail}</p>
+                <div>${card.detail}</div>
             `;
 
             detailHtml += `
@@ -317,6 +318,11 @@ var _hmt = _hmt || [];
                     ${Array.isArray(card.commnet) ? card.commnet.map(comment => `<div class="comment">${comment}</div>`).join('') : '暂无评论'}
                 </div>
             `;
+
+            // 使用 DOMPurify 清理 HTML（如果已引入）
+            if (typeof DOMPurify !== 'undefined') {
+                detailHtml = DOMPurify.sanitize(detailHtml);
+            }
 
             detailContent.innerHTML = detailHtml;
             detailPage.classList.add('open');
