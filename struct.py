@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 def generate_project_structure(directory, output_file, file_types=None):
-    exclude_dirs = {'.git', 'node_modules', 'build', 'dist', 'tmp', 'cache'}
+    exclude_dirs = {'.git', 'node_modules', 'build', 'dist', 'tmp', 'cache','.DS_Store','.env','.vscode'}
     exclude_files = {'.gitignore', 'package-lock.json', 'yarn.lock'}
 
     def should_include_file(file_path):
@@ -19,13 +19,12 @@ def generate_project_structure(directory, output_file, file_types=None):
                     traverse_directory(item, prefix + '  ')
             elif item.is_file():
                 if item.name not in exclude_files and should_include_file(item):
-                    output_file.write(f"{prefix}  {item.name}\n")
-                    output_file.write(f"{prefix}    内容：\n")
+                    output_file.write(f"{prefix}  {item.absolute()}的内容是:\n")
                     try:
                         with item.open('r', encoding='utf-8') as f:
                             content = f.read()
                             output_file.write(f"{prefix}    {content}\n")
-                        output_file.write(f"\n")
+                        output_file.write(f"\n\n")
                     except UnicodeDecodeError:
                         output_file.write(f"{prefix}    (跳过二进制文件)\n\n")
 

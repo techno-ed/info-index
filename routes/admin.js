@@ -88,7 +88,7 @@ const upload = multer({ storage: imageStorage });
 // 添加新内容
 router.post('/content', upload.single('preview'), async (req, res) => {
     try {
-        const { simpleInfo, location, price, area, detail, commnet } = req.body;
+        const { simpleInfo, location, price, area, detail, commnet, hiddenContent } = req.body;
         const preview = req.file ? `/uploads/${req.file.filename}` : null;
 
         const newContent = await Content.create({ 
@@ -97,8 +97,9 @@ router.post('/content', upload.single('preview'), async (req, res) => {
             location, 
             price: parseFloat(price), 
             area, 
-            detail: detail || '', // 直接存储为字符串
-            commnet: JSON.stringify(commnet) // 评论仍然保持 JSON 字符串格式
+            detail: detail || '',
+            commnet: JSON.stringify(commnet),
+            hiddenContent: hiddenContent || '' // 添加隐藏内容字段
         });
 
         res.status(201).json({ message: '内容创建成功', content: newContent });
@@ -142,14 +143,15 @@ router.put('/content/:id', upload.single('preview'), async (req, res) => {
             return res.status(404).json({ error: '内容不存在' });
         }
 
-        const { simpleInfo, location, price, area, detail, commnet } = req.body;
+        const { simpleInfo, location, price, area, detail, commnet, hiddenContent } = req.body;
         const updateData = { 
             simpleInfo, 
             location, 
             price: parseFloat(price), 
             area, 
-            detail: detail || '', // 直接存储为字符串
-            commnet: JSON.stringify(commnet) // 评论仍然保持 JSON 字符串格式
+            detail: detail || '',
+            commnet: JSON.stringify(commnet),
+            hiddenContent: hiddenContent || '' // 添加隐藏内容字段
         };
 
         if (req.file) {

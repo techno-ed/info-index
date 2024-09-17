@@ -243,6 +243,38 @@ var _hmt = _hmt || [];
         .user-link:hover {
             text-decoration: underline;
         }
+
+        .purchase-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-top: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .purchase-btn:hover {
+            background-color: #45a049;
+        }
+
+        .comment-list {
+            margin-top: 20px;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+
+        .comment {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 
@@ -367,14 +399,25 @@ var _hmt = _hmt || [];
                 <p><strong>地区：</strong> ${card.location}</p>
                 <p><strong>详情：</strong></p>
                 <div>${card.detail}</div>
-            `;
 
-            detailHtml += `
                 <div class="comment-list">
                     <h3>评论</h3>
                     ${Array.isArray(card.commnet) ? card.commnet.map(comment => `<div class="comment">${comment}</div>`).join('') : '暂无评论'}
                 </div>
             `;
+
+            if (card.hasPurchased) {
+                detailHtml += `
+                    <h3>隐藏内容</h3>
+                    <div>${card.hiddenContent}</div>
+                `;
+            } else if (<%= user ? 'true' : 'false' %>) {
+                detailHtml += `
+                    <button onclick="confirmPurchase(${card.id})" class="purchase-btn">购买隐藏信息 (需要 <%= contentPrice %> 积分)</button>
+                `;
+            } else {
+                detailHtml += `<p>请<a href="/login">登录</a>后购买隐藏内容</p>`;
+            }
 
             // 使用 DOMPurify 清理 HTML（如果已引入）
             if (typeof DOMPurify !== 'undefined') {
@@ -394,6 +437,44 @@ var _hmt = _hmt || [];
             if (window._hmt) {
                 _hmt.push(['_trackPageview', '/detail/' + card.id]);
             }
+        }
+
+        function confirmPurchase(contentId) {
+            if (confirm('确定要购买这个隐藏内容吗？')) {
+                purchaseContent(contentId);
+            }
+        }
+
+        function purchaseContent(contentId) {
+            fetch(`/content/${contentId}/purchase`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('detail-content').innerHTML = `
+                        <h3>隐藏内容</h3>
+                        ${data.hiddenContent}
+                    `;
+                    // 更新用户积分显示
+                    if (document.getElementById('userPointsDisplay')) {
+                        document.getElementById('userPointsDisplay').textContent = data.remainingPoints;
+                    }
+                } else {
+                    if (data.error === '积分不足') {
+                        alert('积分不足，请联系客服充值');
+                    } else {
+                        alert(data.error);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('购买失败，请稍后再试');
+            });
         }
 
         function closeDetail() {

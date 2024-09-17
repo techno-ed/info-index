@@ -1,27 +1,5 @@
 info-index/
-  .DS_Store
-    内容：
-    (跳过二进制文件)
-
-  .env
-    内容：
-    DB_NAME=zeabur
-DB_USER=root
-DB_PASSWORD=sQTw0RtUJyKMg57C1Wp892h6If4N3EHc
-DB_HOST=hkg1.clusters.zeabur.com
-DB_PORT=32288
-JWT_SECRET=1nXOITVNgp7s5qXheNF1aqH8F35YtCg95nII9SukN5k=
-DB_DIALECT=sqlite
-DB_STORAGE=database.sqlite
-SESSION_SECRET=dajdiadiaiudjxpafdjdsadasuihasu
-
-
-  a.txt
-    内容：
-    
-
-  app.js
-    内容：
+  /Users/momo/Desktop/info-index/app.js的内容是:
     require('dotenv').config();
 const express = require('express');
 const path = require('path');
@@ -37,7 +15,7 @@ const app = express();
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json());  // 添加这行来支持 JSON 请求体
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
@@ -63,11 +41,13 @@ app.set('views', path.join(__dirname, 'views'));
 // 导入路由
 const homeRoutes = require('./routes/homeRoutes');
 const userRoutes = require('./routes/userRoutes');
+const adminRoutes = require('./routes/admin');
 
 // 使用路由
 app.use('/', homeRoutes);
 app.use('/api/users', userRoutes);
 app.use('/', userRoutes);  // 注意这里的变化
+app.use('/admin', adminRoutes);
 
 const PORT = process.env.PORT || 3000;
 
@@ -77,10 +57,27 @@ sequelize.sync().then(() => {
   });
 });
 
+// 错误处理中间件
+app.use((err, req, res, next) => {
+  // 设置局部变量，只在开发中提供错误
+  res.locals.message = err.message;
+  res.locals.error = req.app.get('env') === 'development' ? err : {};
+
+  // 设置状态码
+  res.status(err.status || 500);
+
+  // 渲染错误页面
+  res.render('error', {
+    message: err.message,
+    error: err,
+    status: err.status || 500  // 确保传递 status
+  });
+});
+
+
 
   config/
-    database.js
-      内容：
+    /Users/momo/Desktop/info-index/config/database.js的内容是:
       const { Sequelize } = require('sequelize');
 const path = require('path');
 
@@ -92,60 +89,59 @@ const sequelize = new Sequelize({
 module.exports = { sequelize };  // 注意这里的变化
 
 
-  context.txt
-    内容：
-    	你现在是一个高级开发工程师，精通前端开发和后端开发。能够对于项目需求有自己的理解，并且能设计和进行代码实现，可以使用第三方库。
-
-	我现在有一个静态网站 index.html,然后他会使用本地的数据test.json去动态渲染他的网页，并且会读取对应路径iceice中的图片，渲染网页。
-
-	现在因为业务的需要，我需要对他进行扩展。有如下要求：
-		1、后边的开发都是基于test.json中的数据结构。
-		2、你需要实现一个用户系统，他主要包含用户的注册和登录以及用户的管理，用户信息现在有角色（管理员和普通用户）、积分，后续可能会根据需要扩展，比如金币等。因此，需要有一个登录注册页面，并且不登录注册的话不能进入后边讲到的主页。
-		3、需要有一个主页，主页主要是在现在的index.html的基础上，添加单个cell的收藏功能，用户中心功能，以及判断角色是管理员可以进入到管理页面。
-		4、还需要管理页面，只有管理员可以进入，管理员可以对信息进行增删改查的管理，支持上传图片，上传到服务器本地即可，此外还可以管理用户，比如删除用户，增加用户，修改用户信息等。
-
-
-
   controllers/
-    homeController.js
-      内容：
+    /Users/momo/Desktop/info-index/controllers/homeController.js的内容是:
       const Content = require('../models/Content');
 
-exports.getHomePage = async (req, res) => {
+exports.getHomePage = async (req, res, next) => {
   try {
     const content = await Content.findAll({
       order: [['id', 'ASC']],
-      limit: 50  // 限制返回的数量
+      limit: 50,
+      raw: true // 使用原始查询结果
     });
 
     const formattedContent = {
       code: 200,
-      data: content.map(item => ({
-        id: item.id,
-        simpleInfo: item.simpleInfo,
-        preview: item.preview,
-        location: item.location,
-        price: item.price,
-        area: item.area,
-        detail: item.detail,
-        commnet: item.commnet
-      }))
+      data: content.map(item => {
+        let commnet = [];
+        if (typeof item.commnet === 'string') {
+          try {
+            // 尝试清理 JSON 字符串
+            const cleanedCommnet = item.commnet.trim().replace(/^\uFEFF/, '');
+            commnet = JSON.parse(cleanedCommnet);
+          } catch (e) {
+            console.warn(`无法解析 ID ${item.id} 的 commnet 字段:`, e);
+          }
+        }
+
+        return {
+          id: item.id,
+          simpleInfo: item.simpleInfo,
+          preview: item.preview,
+          location: item.location,
+          price: item.price,
+          area: item.area,
+          detail: item.detail, // 直接使用，不进行解析
+          commnet: Array.isArray(commnet) ? commnet : []
+        };
+      })
     };
 
     res.render('home', { 
       title: '老师信息大全', 
       content: formattedContent,
-      user: req.user  // Passport.js 会自动将用户信息附加到 req.user
+      user: req.user
     });
   } catch (error) {
     console.error('获取内容时出错:', error);
-    res.status(500).render('error', { message: '加载主页时出错' });
+    next(error);
   }
 };
 
 
-    userController.js
-      内容：
+
+    /Users/momo/Desktop/info-index/controllers/userController.js的内容是:
       const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
@@ -221,13 +217,70 @@ exports.logout = (req, res) => {
     res.redirect('/login');
 };
 
+exports.getUserPoints = async (req, res) => {
+    try {
+        // 从 cookie 中获取 token
+        const token = req.cookies.token;
+        if (!token) {
+            return res.status(401).json({ error: '未登录' });
+        }
 
-  database.sqlite
-    内容：
+        // 验证 token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const userId = decoded.id;
+
+        // 查找用户
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({ error: '用户不存在' });
+        }
+
+        // 返回用户积分
+        res.json({ points: user.points });
+    } catch (error) {
+        console.error('获取用户积分错误:', error);
+        res.status(500).json({ error: '获取积分失败，请稍后再试' });
+    }
+};
+
+
+
+  /Users/momo/Desktop/info-index/database.sqlite的内容是:
     (跳过二进制文件)
 
-  index.html
-    内容：
+  /Users/momo/Desktop/info-index/db.js的内容是:
+    const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
+
+const dbPath = path.resolve(__dirname, 'database.sqlite');
+
+const db = new sqlite3.Database(dbPath, (err) => {
+  if (err) {
+    console.error('Could not connect to database', err);
+  } else {
+    console.log('Connected to database');
+  }
+});
+
+function query(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.all(sql, params, (err, rows) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(rows);
+      }
+    });
+  });
+}
+
+module.exports = {
+  query
+};
+
+
+
+  /Users/momo/Desktop/info-index/index.html的内容是:
     <!DOCTYPE html>
 <html lang="zh">
 
@@ -686,10 +739,10 @@ var _hmt = _hmt || [];
 </body>
 </html>
 
+
   js/
   middlewares/
-    auth.js
-      内容：
+    /Users/momo/Desktop/info-index/middlewares/auth.js的内容是:
       const jwt = require('jsonwebtoken');
 
 exports.isLoggedIn = (req, res, next) => {
@@ -709,9 +762,44 @@ exports.isLoggedIn = (req, res, next) => {
 };
 
 
+
+    /Users/momo/Desktop/info-index/middlewares/isAdmin.js的内容是:
+      const jwt = require('jsonwebtoken');
+
+function isAdmin(req, res, next) {
+    console.log('isAdmin middleware called');
+    const token = req.cookies.token;
+
+    if (token) {
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            console.log('User:', decoded);
+            console.log('User role:', decoded.role);
+
+            if (decoded.role === 'admin') {
+                console.log('User is admin, proceeding to next middleware');
+                req.user = decoded;
+                next();
+            } else {
+                console.log('User is not admin, redirecting to home page');
+                res.redirect('/');
+            }
+        } catch (error) {
+            console.log('Invalid token, redirecting to login page');
+            res.clearCookie('token');
+            res.redirect('/login');
+        }
+    } else {
+        console.log('No token found, redirecting to login page');
+        res.redirect('/login');
+    }
+}
+
+module.exports = isAdmin;
+
+
   models/
-    Content.js
-      内容：
+    /Users/momo/Desktop/info-index/models/Content.js的内容是:
       const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 
@@ -727,7 +815,7 @@ const Content = sequelize.define('Content', {
   },
   preview: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: true
   },
   location: {
     type: DataTypes.STRING,
@@ -742,7 +830,7 @@ const Content = sequelize.define('Content', {
     allowNull: false
   },
   detail: {
-    type: DataTypes.JSON,
+    type: DataTypes.TEXT,
     allowNull: false
   },
   commnet: {
@@ -754,8 +842,8 @@ const Content = sequelize.define('Content', {
 module.exports = Content;
 
 
-    User.js
-      内容：
+
+    /Users/momo/Desktop/info-index/models/User.js的内容是:
       const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 const bcrypt = require('bcryptjs');
@@ -773,6 +861,10 @@ const User = sequelize.define('User', {
   role: {
     type: DataTypes.ENUM('user', 'admin'),
     defaultValue: 'user'
+  },
+  points: {  // 新增积分字段
+    type: DataTypes.INTEGER,
+    defaultValue: 0
   }
 }, {
   hooks: {
@@ -798,8 +890,19 @@ User.prototype.validPassword = async function(password) {
 module.exports = User;
 
 
-  package.json
-    内容：
+
+    /Users/momo/Desktop/info-index/models/index.js的内容是:
+      const User = require('./User');
+const Content = require('./Content');
+
+module.exports = {
+  User,
+  Content
+};
+
+
+
+  /Users/momo/Desktop/info-index/package.json的内容是:
     {
   "name": "info-index",
   "version": "1.0.0",
@@ -815,6 +918,7 @@ module.exports = User;
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
@@ -824,6 +928,7 @@ module.exports = User;
     "express-session": "^1.18.0",
     "jsonwebtoken": "^9.0.2",
     "mariadb": "^3.3.1",
+    "multer": "^1.4.5-lts.1",
     "passport": "^0.7.0",
     "sequelize": "^6.37.3",
     "sqlite3": "^5.1.7"
@@ -834,240 +939,13 @@ module.exports = User;
 }
 
 
-  project_structure.txt
-    内容：
-    info-index/
-  app.js
-    内容预览：
-    require('dotenv').config();
-    const express = require('express');
-    const path = require('path');
-    const cors = require('cors');
-    const { sequelize } = require('./config/database');
-    ...
-
-  config/
-    database.js
-      内容预览：
-      const { Sequelize } = require('sequelize');
-      const path = require('path');
-      
-      const sequelize = new Sequelize({
-        dialect: 'sqlite',
-      ...
-
-  context.txt
-    内容预览：
-    	你现在是一个高级开发工程师，精通前端开发和后端开发。能够对于项目需求有自己的理解，并且能设计和进行代码实现，可以使用第三方库。
-    
-    	我现在有一个静态网站 index.html,然后他会使用本地的数据test.json去动态渲染他的网页，并且会读取对应路径iceice中的图片，渲染网页。
-    
-    	现在因为业务的需要，我需要对他进行扩展。有如下要求：
-    ...
-
-  controllers/
-    homeController.js
-      内容预览：
-      const Content = require('../models/Content');
-      
-      exports.getHomePage = async (req, res) => {
-        try {
-          const content = await Content.findAll({
-      ...
-
-    userController.js
-      内容预览：
-      const User = require('../models/User');
-      const jwt = require('jsonwebtoken');
-      
-      exports.register = async (req, res) => {
-        try {
-      ...
-
-  database.sqlite
-    内容预览：
-    SQLite format 3   @                 
-    
-    ...
-
-  generate_project_structure.sh
-    内容预览：
-    #!/bin/bash
-    
-    # 检查是否提供了目录参数
-    if [ $# -eq 0 ]; then
-        echo "用法: $0 <目录路径> [文件类型1,文件类型2,...]"
-    ...
-
-  index.html
-    内容预览：
-    <!DOCTYPE html>
-    <html lang="zh">
-    
-    <script>
-    var _hmt = _hmt || [];
-    ...
-
-  js/
-  middlewares/
-    auth.js
-      内容预览：
-      const jwt = require('jsonwebtoken');
-      
-      exports.isLoggedIn = (req, res, next) => {
-        const token = req.cookies.token;
-        if (token) {
-      ...
-
-  models/
-    Content.js
-      内容预览：
-      const { DataTypes } = require('sequelize');
-      const { sequelize } = require('../config/database');
-      
-      const Content = sequelize.define('Content', {
-        id: {
-      ...
-
-    User.js
-      内容预览：
-      const { DataTypes } = require('sequelize');
-      const { sequelize } = require('../config/database');
-      const bcrypt = require('bcryptjs');
-      
-      const User = sequelize.define('User', {
-      ...
-
-  package.json
-    内容预览：
-    {
-      "name": "info-index",
-      "version": "1.0.0",
-      "description": "",
-      "main": "index.js",
-    ...
-
-  project_structure.txt
-    内容预览：
-    info-index/
-      app.js
-        内容预览：
-        require('dotenv').config();
-        const express = require('express');
-    ...
 
   public/
-    css/
-      style.css
-        内容预览：
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 0;
-        ...
-
-    images/
-      iceice/
-        1.jpg
-          内容预览：
-          ...
-
-        2.jpg
-          内容预览：
-          ...
-
-    js/
-      main.js
-        内容预览：
-        console.log('主页加载完成');
-        ...
-
-  routes/
-    homeRoutes.js
-      内容预览：
-      const express = require('express');
-      const router = express.Router();
-      const homeController = require('../controllers/homeController');
-      const { isLoggedIn } = require('../middlewares/auth');
-      
-      ...
-
-    userRoutes.js
-      内容预览：
-      const express = require('express');
-      const router = express.Router();
-      const userController = require('../controllers/userController');
-      
-      router.get('/login', userController.getLoginPage);
-      ...
-
-  scripts/
-    seedContent.js
-      内容预览：
-      const { sequelize } = require('../config/database');
-      const Content = require('../models/Content');
-      
-      const seedContent = async () => {
-        try {
-      ...
-
-  test.json
-    内容预览：
-    {
-    	"code": 200,
-    	"data": [
-    		{
-    			"id": 1,
-    ...
-
-  views/
-    error.ejs
-      内容预览：
-      <!DOCTYPE html>
-      <html lang="zh">
-      <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      ...
-
-    home.ejs
-      内容预览：
-      <!DOCTYPE html>
-      <html lang="zh">
-      
-      <script>
-      var _hmt = _hmt || [];
-      ...
-
-    login.ejs
-      内容预览：
-      <!DOCTYPE html>
-      <html lang="zh">
-      <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      ...
-
-    register.ejs
-      内容预览：
-      <!DOCTYPE html>
-      <html lang="zh">
-      <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      ...
-
-
-
-  public/
-    .DS_Store
-      内容：
+    /Users/momo/Desktop/info-index/public/.DS_Store的内容是:
       (跳过二进制文件)
 
     css/
-      style.css
-        内容：
+      /Users/momo/Desktop/info-index/public/css/style.css的内容是:
         body {
     font-family: Arial, sans-serif;
     line-height: 1.6;
@@ -1116,25 +994,281 @@ footer {
 }
 
 
+
     images/
       iceice/
-        1.jpg
-          内容：
+        /Users/momo/Desktop/info-index/public/images/iceice/1.jpg的内容是:
           (跳过二进制文件)
 
-        2.jpg
-          内容：
+        /Users/momo/Desktop/info-index/public/images/iceice/2.jpg的内容是:
           (跳过二进制文件)
+
+      /Users/momo/Desktop/info-index/public/images/logo.png的内容是:
+        (跳过二进制文件)
 
     js/
-      main.js
-        内容：
+      /Users/momo/Desktop/info-index/public/js/main.js的内容是:
         console.log('主页加载完成');
 
 
+
+    uploads/
+      /Users/momo/Desktop/info-index/public/uploads/1725977337201.jpeg的内容是:
+        (跳过二进制文件)
+
+      /Users/momo/Desktop/info-index/public/uploads/1725978535505.jpeg的内容是:
+        (跳过二进制文件)
+
+      /Users/momo/Desktop/info-index/public/uploads/1726063879977.webp的内容是:
+        (跳过二进制文件)
+
+      /Users/momo/Desktop/info-index/public/uploads/1726278214711.jpeg的内容是:
+        (跳过二进制文件)
+
+      /Users/momo/Desktop/info-index/public/uploads/1726278333497.png的内容是:
+        (跳过二进制文件)
+
   routes/
-    homeRoutes.js
-      内容：
+    /Users/momo/Desktop/info-index/routes/admin.js的内容是:
+      const express = require('express');
+const router = express.Router();
+const User = require('../models/User');
+const Content = require('../models/Content');
+const isAdmin = require('../middlewares/isAdmin');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// 将 isAdmin 中间件应用到所有管理员路由
+router.use(isAdmin);
+
+// 管理员仪表板
+router.get('/', (req, res) => {
+    res.render('admin/dashboard');
+});
+
+// 获取所有用户
+router.get('/users', async (req, res) => {
+    try {
+        console.log('User model:', User); // 添加这行
+        if (!User || !User.findAll) {
+            throw new Error('User model is not properly defined');
+        }
+        const users = await User.findAll({
+            attributes: ['id', 'username', 'role', 'points']
+        });
+        console.log('Users fetched:', users);
+        res.json(users);
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).json({ error: '获取用户列表失败' });
+    }
+});
+
+// 添加新用户
+router.post('/users', async (req, res) => {
+    const { username, password, role } = req.body;
+    if (role !== 'user' && role !== 'admin') {
+        return res.status(400).json({ error: '无效的角色' });
+    }
+    try {
+        const newUser = await User.create({ username, password, role });
+        res.status(201).json({ message: '用户创建成功', user: newUser });
+    } catch (error) {
+        console.error('Error creating user:', error);
+        res.status(500).json({ error: '创建用户失败' });
+    }
+});
+
+// 删除用户
+router.delete('/users/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        await User.destroy({ where: { id } });
+        res.json({ message: '用户删除成功' });
+    } catch (error) {
+        res.status(500).json({ error: '删除用户失败' });
+    }
+});
+
+// 获取所有内容
+router.get('/content', async (req, res) => {
+    try {
+        console.log('正在获取内容');
+        const content = await Content.findAll();
+        console.log('获取到的内容:', JSON.stringify(content, null, 2));
+        res.json(content);
+    } catch (error) {
+        console.error('获取内容列表失败:', error);
+        res.status(500).json({ error: '获取内容列表失败' });
+    }
+});
+
+// 配置 multer 存储
+const imageStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, path.join(__dirname, '../public/uploads/'))
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname))
+    }
+});
+
+const upload = multer({ storage: imageStorage });
+
+// 添加新内容
+router.post('/content', upload.single('preview'), async (req, res) => {
+    try {
+        const { simpleInfo, location, price, area, detail, commnet } = req.body;
+        const preview = req.file ? `/uploads/${req.file.filename}` : null;
+
+        const newContent = await Content.create({ 
+            simpleInfo, 
+            preview, 
+            location, 
+            price: parseFloat(price), 
+            area, 
+            detail: detail || '', // 直接存储为字符串
+            commnet: JSON.stringify(commnet) // 评论仍然保持 JSON 字符串格式
+        });
+
+        res.status(201).json({ message: '内容创建成功', content: newContent });
+    } catch (error) {
+        console.error('Error creating content:', error);
+        res.status(500).json({ error: '创建内容失败' });
+    }
+});
+
+// 添加新内容路由
+router.get('/content/add', (req, res) => {
+    console.log('访问添加内容页面');
+    res.render('admin/content-form', { title: '添加新内容', contentId: null });
+});
+
+// 编辑内容路由
+router.get('/content/edit/:id', (req, res) => {
+    res.render('admin/content-form', { contentId: req.params.id });
+});
+
+// 获取单个内容
+router.get('/content/:id', async (req, res) => {
+    try {
+        const content = await Content.findByPk(req.params.id);
+        if (content) {
+            res.json(content);
+        } else {
+            res.status(404).json({ error: '内容不存在' });
+        }
+    } catch (error) {
+        console.error('Error fetching content:', error);
+        res.status(500).json({ error: '获取内容失败' });
+    }
+});
+
+// 更新内容
+router.put('/content/:id', upload.single('preview'), async (req, res) => {
+    try {
+        const content = await Content.findByPk(req.params.id);
+        if (!content) {
+            return res.status(404).json({ error: '内容不存在' });
+        }
+
+        const { simpleInfo, location, price, area, detail, commnet } = req.body;
+        const updateData = { 
+            simpleInfo, 
+            location, 
+            price: parseFloat(price), 
+            area, 
+            detail: detail || '', // 直接存储为字符串
+            commnet: JSON.stringify(commnet) // 评论仍然保持 JSON 字符串格式
+        };
+
+        if (req.file) {
+            updateData.preview = `/uploads/${req.file.filename}`;
+            // 删除旧的预览图
+            if (content.preview) {
+                const oldPath = path.join(__dirname, '..', 'public', content.preview);
+                fs.unlink(oldPath, err => {
+                    if (err) console.error('Error deleting old preview:', err);
+                });
+            }
+        }
+
+        await content.update(updateData);
+        res.json({ message: '内容更新成功', content });
+    } catch (error) {
+        console.error('Error updating content:', error);
+        res.status(500).json({ error: '更新内容失败' });
+    }
+});
+
+// 删除内容
+router.delete('/content/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        await Content.destroy({ where: { id } });
+        res.json({ message: '内容删除成功' });
+    } catch (error) {
+        res.status(500).json({ error: '删除内容失败' });
+    }
+});
+
+// 通用的日志中间件
+router.use((req, res, next) => {
+    console.log('Admin 路由收到请求:', req.method, req.url);
+    next();
+});
+
+// 图片上传路由
+router.post('/upload-image', upload.single('image'), (req, res) => {
+    if (req.file) {
+        // 返回上传后的图片 URL
+        res.json({ url: '/uploads/' + req.file.filename });
+    } else {
+        res.status(400).json({ error: '上传失败' });
+    }
+});
+
+// 确保这个路由已经定义
+router.put('/users/:id/points', async (req, res) => {
+    console.log('收到更新积分请求:', req.params, req.body);
+    try {
+        const { id } = req.params;
+        const { points } = req.body;
+
+        // 验证积分是否为有效数字
+        if (isNaN(points) || points < 0) {
+            return res.status(400).json({ error: '无效的积分值' });
+        }
+
+        console.log(`尝试更新用户 ${id} 的积分为 ${points}`);
+
+        const user = await User.findByPk(id);
+        if (!user) {
+            console.log(`未找到 ID 为 ${id} 的用户`);
+            return res.status(404).json({ error: '未找到用户' });
+        }
+
+        console.log(`找到用户:`, user.toJSON());
+
+        // 更新用户积分
+        user.points = parseInt(points, 10);
+        await user.save();
+
+        console.log(`成功更新用户 ${id} 的积分为 ${points}`);
+        res.json({ success: true, message: '积分更新成功', user: { id: user.id, username: user.username, points: user.points } });
+    } catch (error) {
+        console.error('更新用户积分时发生错误:', error);
+        res.status(500).json({ error: '更新积分失败', details: error.message });
+    }
+});
+
+module.exports = router;
+
+
+
+    /Users/momo/Desktop/info-index/routes/homeRoutes.js的内容是:
       const express = require('express');
 const router = express.Router();
 const homeController = require('../controllers/homeController');
@@ -1152,8 +1286,8 @@ router.get('/', isLoggedIn, logUser, homeController.getHomePage);
 module.exports = router;
 
 
-    userRoutes.js
-      内容：
+
+    /Users/momo/Desktop/info-index/routes/userRoutes.js的内容是:
       const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
@@ -1163,13 +1297,14 @@ router.get('/register', userController.getRegisterPage);
 router.post('/api/users/register', userController.register);
 router.post('/api/users/login', userController.login);
 router.get('/logout', userController.logout);
+router.get('/api/user/points', userController.getUserPoints);
 
 module.exports = router;
 
 
+
   scripts/
-    seedContent.js
-      内容：
+    /Users/momo/Desktop/info-index/scripts/seedContent.js的内容是:
       const { sequelize } = require('../config/database');
 const Content = require('../models/Content');
 
@@ -1217,13 +1352,13 @@ const seedContent = async () => {
 seedContent();
 
 
-  struct.py
-    内容：
+
+  /Users/momo/Desktop/info-index/struct.py的内容是:
     import os
 from pathlib import Path
 
 def generate_project_structure(directory, output_file, file_types=None):
-    exclude_dirs = {'.git', 'node_modules', 'build', 'dist', 'tmp', 'cache'}
+    exclude_dirs = {'.git', 'node_modules', 'build', 'dist', 'tmp', 'cache','.DS_Store','.env','.vscode'}
     exclude_files = {'.gitignore', 'package-lock.json', 'yarn.lock'}
 
     def should_include_file(file_path):
@@ -1240,13 +1375,12 @@ def generate_project_structure(directory, output_file, file_types=None):
                     traverse_directory(item, prefix + '  ')
             elif item.is_file():
                 if item.name not in exclude_files and should_include_file(item):
-                    output_file.write(f"{prefix}  {item.name}\n")
-                    output_file.write(f"{prefix}    内容：\n")
+                    output_file.write(f"{prefix}  {item.absolute()}的内容是:\n")
                     try:
                         with item.open('r', encoding='utf-8') as f:
                             content = f.read()
                             output_file.write(f"{prefix}    {content}\n")
-                        output_file.write(f"\n")
+                        output_file.write(f"\n\n")
                     except UnicodeDecodeError:
                         output_file.write(f"{prefix}    (跳过二进制文件)\n\n")
 
@@ -1265,8 +1399,8 @@ if __name__ == "__main__":
     print("项目结构和完整内容已保存到 a.txt")
 
 
-  test.json
-    内容：
+
+  /Users/momo/Desktop/info-index/test.json的内容是:
     {
 	"code": 200,
 	"data": [
@@ -1299,15 +1433,732 @@ if __name__ == "__main__":
 	]
 }
 
+
   views/
-    error.ejs
-      内容：
+    admin/
+      /Users/momo/Desktop/info-index/views/admin/content-form.ejs的内容是:
+        <!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= contentId ? '编辑内容' : '添加新内容' %></title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="number"],
+        input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        #detailEditor {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 5px;
+            min-height: 100px;
+        }
+        button {
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            margin-top: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .commentItem {
+            display: flex;
+            margin-top: 5px;
+        }
+        .commentItem input {
+            flex-grow: 1;
+            margin-right: 5px;
+        }
+        #previewImage {
+            max-width: 200px;
+            margin-top: 10px;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background-color: #3498db;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-secondary {
+            background-color: #95a5a6;
+            color: #fff;
+        }
+
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><%= contentId ? '编辑内容' : '添加新内容' %></h1>
+        <form id="contentForm" enctype="multipart/form-data">
+            <input type="hidden" id="contentId" value="<%= contentId || '' %>">
+            <div>
+                <label for="simpleInfo">简介:</label>
+                <input type="text" id="simpleInfo" name="simpleInfo" required>
+            </div>
+            <div>
+                <label for="preview">预览:</label>
+                <input type="file" id="preview" name="preview" accept="image/*" <%= contentId ? '' : 'required' %>>
+                <% if (contentId) { %>
+                    <img id="previewImage" src="" alt="当前预览图" style="max-width:200px;">
+                <% } %>
+            </div>
+            <div>
+                <label for="location">位置:</label>
+                <input type="text" id="location" name="location" required>
+            </div>
+            <div>
+                <label for="price">价格:</label>
+                <input type="number" id="price" name="price" required>
+            </div>
+            <div>
+                <label for="area">区域:</label>
+                <input type="text" id="area" name="area" required>
+            </div>
+            <div>
+                <label for="detailEditor">详细信息:</label>
+                <div id="detailEditor" contenteditable="true"></div>
+                <input type="file" id="detailImage" accept="image/*">
+                <button type="button" onclick="insertImage()">插入图片</button>
+            </div>
+            <div>
+                <label for="commentList">评论:</label>
+                <div id="commentList"></div>
+                <button type="button" onclick="addCommentInput()">添加评论</button>
+            </div>
+            <div class="button-group">
+                <button type="button" class="btn btn-secondary" onclick="window.close()">返回</button>
+                <button type="submit" class="btn btn-primary"><%= contentId ? '更新内容' : '添加内容' %></button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const contentId = document.getElementById('contentId').value;
+
+        // 如果是编辑模式,加载现有内容
+        if (contentId) {
+            fetch(`/admin/content/${contentId}`)
+                .then(response => response.json())
+                .then(content => {
+                    document.getElementById('simpleInfo').value = content.simpleInfo;
+                    document.getElementById('location').value = content.location;
+                    document.getElementById('price').value = content.price;
+                    document.getElementById('area').value = content.area;
+                    document.getElementById('detailEditor').innerHTML = JSON.parse(content.detail);
+                    document.getElementById('previewImage').src = content.preview;
+                    
+                    const comments = JSON.parse(content.commnet);
+                    comments.forEach(comment => addCommentInput(comment));
+                });
+        }
+
+        function insertImage() {
+            const input = document.getElementById('detailImage');
+            const file = input.files[0];
+            if (file) {
+                const formData = new FormData();
+                formData.append('image', file);
+
+                // 显示上传进度
+                const progressBar = document.createElement('div');
+                progressBar.style.width = '0%';
+                progressBar.style.height = '5px';
+                progressBar.style.backgroundColor = 'blue';
+                document.getElementById('detailEditor').appendChild(progressBar);
+
+                fetch('/admin/upload-image', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.url) {
+                        const img = document.createElement('img');
+                        img.src = data.url;
+                        img.style.maxWidth = '100%';
+                        document.getElementById('detailEditor').appendChild(img);
+                    } else {
+                        alert('图片上传失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('图片上传失败');
+                })
+                .finally(() => {
+                    // 移除进度条
+                    progressBar.remove();
+                });
+            }
+        }
+
+        function addCommentInput(value = '') {
+            const commentList = document.getElementById('commentList');
+            const commentItem = document.createElement('div');
+            commentItem.className = 'commentItem';
+            commentItem.innerHTML = `
+                <input type="text" value="${value}" placeholder="输入评论">
+                <button type="button" onclick="this.parentElement.remove()">删除</button>
+            `;
+            commentList.appendChild(commentItem);
+        }
+
+        document.getElementById('contentForm').onsubmit = function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+
+            // 处理详情
+            const detailEditor = document.getElementById('detailEditor');
+            formData.set('detail', detailEditor.innerHTML);  // 直接设置 HTML 内容，不使用 JSON.stringify
+
+            // 处理评论
+            const comments = Array.from(document.querySelectorAll('#commentList input'))
+                .map(input => input.value)
+                .filter(comment => comment.trim() !== '');
+            formData.set('commnet', JSON.stringify(comments));  // 评论仍然需要 JSON.stringify，因为它是一个数组
+
+            const url = contentId ? `/admin/content/${contentId}` : '/admin/content';
+            const method = contentId ? 'PUT' : 'POST';
+
+            fetch(url, { method, body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                    } else {
+                        if (contentId) {
+                            // 更新成功，关闭页面
+                            alert('内容更新成功');
+                            window.opener.location.reload(); // 刷新父窗口
+                            window.close(); // 关闭当前窗口
+                        } else {
+                            // 添加成功，清除表单
+                            alert('内容添加成功');
+                            clearForm();
+                            window.opener.location.reload(); // 刷新父窗口
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        };
+
+        // 添加清除表单的函数
+        function clearForm() {
+            document.getElementById('simpleInfo').value = '';
+            document.getElementById('preview').value = '';
+            document.getElementById('location').value = '';
+            document.getElementById('price').value = '';
+            document.getElementById('area').value = '';
+            document.getElementById('detailEditor').innerHTML = '';
+            document.getElementById('commentList').innerHTML = '';
+            if (document.getElementById('previewImage')) {
+                document.getElementById('previewImage').src = '';
+            }
+        }
+    </script>
+</body>
+</html>
+
+
+      /Users/momo/Desktop/info-index/views/admin/content.ejs的内容是:
+        <!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>内容管理</title>
+    <style>
+        /* 添加一些基本样式 */
+    </style>
+</head>
+<body>
+    <h1>内容管理</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>简介</th>
+                <th>价格</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% content.forEach(item => { %>
+                <tr>
+                    <td><%= item.id %></td>
+                    <td><%= item.simpleInfo %></td>
+                    <td><%= item.price %></td>
+                    <td>
+                        <button onclick="editContent(<%= item.id %>)">编辑</button>
+                        <button onclick="deleteContent(<%= item.id %>)">删除</button>
+                    </td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+    <form id="addContentForm">
+        <!-- 添加内容表单字段 -->
+    </form>
+    <script>
+        // 实现添加、编辑和删除内容的前端 JavaScript
+    </script>
+</body>
+</html>
+
+
+
+      /Users/momo/Desktop/info-index/views/admin/dashboard.ejs的内容是:
+        <!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员仪表板</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        form {
+            margin-top: 20px;
+        }
+        input[type="text"], input[type="email"], input[type="number"], input[type="password"], select {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .section {
+                width: 100%;
+            }
+            table {
+                font-size: 14px;
+            }
+            th, td {
+                padding: 8px 5px;
+            }
+            button {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>管理员仪表板</h1>
+    <div class="container">
+        <div class="section">
+            <h2>用户管理</h2>
+            <div style="overflow-x: auto;">
+                <table id="userTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>用户名</th>
+                            <th>角色</th>
+                            <th>积分</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 用户数据将通过 JavaScript 动态加载 -->
+                    </tbody>
+                </table>
+            </div>
+            <form id="addUserForm">
+                <h3>添加新用户</h3>
+                <input type="text" id="username" placeholder="用户名" required>
+                <select id="role" required>
+                    <option value="">选择角色</option>
+                    <option value="user">普通用户</option>
+                    <option value="admin">管理员</option>
+                </select>
+                <input type="password" id="password" placeholder="密码" required>
+                <input type="submit" value="添加用户">
+            </form>
+        </div>
+        <div class="section">
+            <h2>内容管理</h2>
+            <button onclick="location.href='/admin/content/add'">添加新内容</button>
+            <div style="overflow-x: auto;">
+                <table id="contentTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>简介</th>
+                            <th>预览</th>
+                            <th>位置</th>
+                            <th>价格</th>
+                            <th>区域</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 内容数据将通过 JavaScript 动态加载 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 加载用户数据
+        function loadUsers() {
+            fetch('/admin/users')
+                .then(response => response.json())
+                .then(users => {
+                    const tbody = document.querySelector('#userTable tbody');
+                    tbody.innerHTML = '';
+                    users.forEach(user => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${user.id}</td>
+                                <td>${user.username}</td>
+                                <td>${user.role}</td>
+                                <td>
+                                    <span id="points-${user.id}">${user.points}</span>
+                                    <input type="number" id="edit-points-${user.id}" style="display:none;">
+                                    <button onclick="editPoints(${user.id})">编辑</button>
+                                    <button onclick="savePoints(${user.id})" style="display:none;">保存</button>
+                                </td>
+                                <td><button onclick="deleteUser(${user.id})">删除</button></td>
+                            </tr>
+                        `;
+                    });
+                })
+                .catch(error => console.error('Error loading users:', error));
+        }
+
+        // 编辑积分
+        function editPoints(userId) {
+            const pointsSpan = document.getElementById(`points-${userId}`);
+            const pointsInput = document.getElementById(`edit-points-${userId}`);
+            const editButton = pointsSpan.nextElementSibling.nextElementSibling;
+            const saveButton = editButton.nextElementSibling;
+
+            pointsSpan.style.display = 'none';
+            pointsInput.style.display = 'inline';
+            pointsInput.value = pointsSpan.textContent;
+            editButton.style.display = 'none';
+            saveButton.style.display = 'inline';
+        }
+
+        // 保存积分
+        function savePoints(userId) {
+            const pointsInput = document.getElementById(`edit-points-${userId}`);
+            const newPoints = pointsInput.value;
+
+            console.log(`尝试更新用户 ${userId} 的积分为 ${newPoints}`);
+
+            fetch(`/admin/users/${userId}/points`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ points: newPoints }),
+            })
+            .then(response => {
+                console.log('服务器响应状态:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('服务器响应数据:', data);
+                if (data.success) {
+                    console.log(`成功更新用户 ${userId} 的积分为 ${newPoints}`);
+                    loadUsers();  // 重新加载用户列表
+                } else {
+                    console.error('更新积分失败:', data.error);
+                    alert('更新积分失败: ' + (data.error || '未知错误'));
+                }
+            })
+            .catch(error => {
+                console.error('更新积分时发生错误:', error);
+                alert('更新积分失败: ' + error.message);
+            });
+        }
+
+        // 修改加载内容的函数
+        function loadContent() {
+            console.log('开始加载内容');
+            fetch('/admin/content')
+                .then(response => {
+                    console.log('收到响应:', response);
+                    return response.json();
+                })
+                .then(content => {
+                    console.log('解析后的内容:', content);
+                    const tbody = document.querySelector('#contentTable tbody');
+                    tbody.innerHTML = '';
+                    if (Array.isArray(content) && content.length > 0) {
+                        content.forEach(item => {
+                            console.log('处理项目:', item);
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td>${item.id}</td>
+                                    <td>${item.simpleInfo || ''}</td>
+                                    <td>${item.preview ? '<img src="' + item.preview + '" alt="预览图" style="max-width:100px; max-height:100px;">' : '无预览图'}</td>
+                                    <td>${item.location || ''}</td>
+                                    <td>${item.price || ''}</td>
+                                    <td>${item.area || ''}</td>
+                                    <td>
+                                        <button onclick="window.open('/admin/content/edit/${item.id}', '_blank')">编辑</button>
+                                        <button onclick="deleteContent(${item.id})">删除</button>
+                                        <div>详情: ${item.detail ? item.detail.substring(0, 50) : 'N/A'}...</div>
+                                        <div>评论数: ${item.commnet ? JSON.parse(item.commnet).length : 0}</div>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        console.log('没有内容或内容不是数组');
+                        tbody.innerHTML = '<tr><td colspan="7">没有找到内容</td></tr>';
+                    }
+                })
+                .catch(error => {
+                    console.error('加载内容时出错:', error);
+                    const tbody = document.querySelector('#contentTable tbody');
+                    tbody.innerHTML = `<tr><td colspan="7">加载内容时出错: ${error.message}</td></tr>`;
+                });
+        }
+
+        // 确保在页面加载完成后调用 loadContent
+        document.addEventListener('DOMContentLoaded', loadContent);
+
+        // 删除用户
+        function deleteUser(id) {
+            if (confirm('确定要删除这个用户吗？')) {
+                fetch(`/admin/users/${id}`, { method: 'DELETE' })
+                    .then(() => loadUsers());
+            }
+        }
+
+        // 删除内容
+        function deleteContent(id) {
+            if (confirm('确定要删除这个内容吗？')) {
+                fetch(`/admin/content/${id}`, { method: 'DELETE' })
+                    .then(() => loadContent());
+            }
+        }
+
+        // 添加用户
+        document.getElementById('addUserForm').onsubmit = function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const role = document.getElementById('role').value;
+            const password = document.getElementById('password').value;
+            fetch('/admin/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, role, password })
+            }).then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    loadUsers();
+                    this.reset();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('添加用户失败');
+            });
+        };
+
+        // 初始加载数据
+        loadUsers();
+        loadContent();
+    </script>
+</body>
+</html>
+
+
+
+      /Users/momo/Desktop/info-index/views/admin/users.ejs的内容是:
+        <!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理</title>
+    <style>
+        /* 添加一些基本样式 */
+    </style>
+</head>
+<body>
+    <h1>用户管理</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>用户名</th>
+                <th>邮箱</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% users.forEach(user => { %>
+                <tr>
+                    <td><%= user.id %></td>
+                    <td><%= user.username %></td>
+                    <td><%= user.email %></td>
+                    <td>
+                        <button onclick="deleteUser(<%= user.id %>)">删除</button>
+                    </td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+    <form id="addUserForm">
+        <!-- 添加用户表单字段 -->
+    </form>
+    <script>
+        // 实现添加和删除用户的前端 JavaScript
+    </script>
+</body>
+</html>
+
+
+
+    /Users/momo/Desktop/info-index/views/error.ejs的内容是:
       <!DOCTYPE html>
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>错误 - <%= status %></title>
+    <title>错误 - <%= status || '未知错误' %></title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -1349,11 +2200,11 @@ if __name__ == "__main__":
 </head>
 <body>
     <div class="error-container">
-        <h1>出错了 - <%= status %></h1>
+        <h1>错误 <%= status || '未知错误' %></h1>
         <div class="error-details">
             <p><%= message %></p>
         </div>
-        <% if (error.stack && process.env.NODE_ENV === 'development') { %>
+        <% if (error && error.stack) { %>
             <pre><%= error.stack %></pre>
         <% } %>
         <a href="/" class="back-link">返回首页</a>
@@ -1362,8 +2213,8 @@ if __name__ == "__main__":
 </html>
 
 
-    home.ejs
-      内容：
+
+    /Users/momo/Desktop/info-index/views/home.ejs的内容是:
       <!DOCTYPE html>
 <html lang="zh">
 
@@ -1561,6 +2412,54 @@ var _hmt = _hmt || [];
                 right: -100%;
             }
         }
+
+        /* 添加新的样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 300px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .user-link {
+            color: #3498db;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .user-link:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 
@@ -1576,12 +2475,16 @@ var _hmt = _hmt || [];
                         编号
                     </button>
                     <select id="area-filter">
-                        <option value="">所有地区</option>
+                        <option value="">所有地</option>
                     </select>
                 </div>
-                <% if (typeof user !== 'undefined' && user) { %>
+                <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
                     <div class="user-info">
-                        欢迎, <%= user.username %> | <a href="/logout">登出</a>
+                        欢迎, <%= user.username %> | <a href="/logout">登出</a> | <a href="/admin">管理页面</a>
+                    </div>
+                <% } else if (typeof user !== 'undefined' && user) { %>
+                    <div class="user-info">
+                        欢迎, <a href="#" class="user-link" onclick="showUserPoints()"><%= user.username %></a> | <a href="/logout">登出</a>
                     </div>
                 <% } else { %>
                     <div class="user-info">
@@ -1597,6 +2500,15 @@ var _hmt = _hmt || [];
     <div class="detail-page" id="detail-page">
         <span class="detail-close" onclick="closeDetail()">&times;</span>
         <div id="detail-content"></div>
+    </div>
+
+    <!-- 用户积分模态框 -->
+    <div id="userPointsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeUserPointsModal()">&times;</span>
+            <h2>用户积分</h2>
+            <p>您当前的积分: <span id="userPointsDisplay"></span></p>
+        </div>
     </div>
 
     <script>
@@ -1663,29 +2575,28 @@ var _hmt = _hmt || [];
             const detailPage = document.getElementById('detail-page');
             const overlay = document.getElementById('overlay');
             const detailContent = document.getElementById('detail-content');
+            
             let detailHtml = `
-                <h2>编号：${card.id}</h2>
+                <h2>编号${card.id}</h2>
                 <img src="${card.preview}" alt="预览图" style="width: 100%; height: auto; object-fit: cover; margin-bottom: 15px;">
                 <p><strong>简介：</strong> ${card.simpleInfo}</p>
                 <p><strong>价格：</strong> ￥${card.price.toFixed(2)}</p>
                 <p><strong>地区：</strong> ${card.location}</p>
                 <p><strong>详情：</strong></p>
+                <div>${card.detail}</div>
             `;
-
-            card.detail.forEach(item => {
-                if (item.type === 1) {
-                    detailHtml += `<p>${item.content}</p>`;
-                } else if (item.type === 2) {
-                    detailHtml += `<img src="${item.content}" alt="详情图片" style="max-width: 100%; height: auto; margin-bottom: 15px;">`;
-                }
-            });
 
             detailHtml += `
                 <div class="comment-list">
                     <h3>评论</h3>
-                    ${card.commnet.map(comment => `<div class="comment">${comment}</div>`).join('')}
+                    ${Array.isArray(card.commnet) ? card.commnet.map(comment => `<div class="comment">${comment}</div>`).join('') : '暂无评论'}
                 </div>
             `;
+
+            // 使用 DOMPurify 清理 HTML（如果已引入）
+            if (typeof DOMPurify !== 'undefined') {
+                detailHtml = DOMPurify.sanitize(detailHtml);
+            }
 
             detailContent.innerHTML = detailHtml;
             detailPage.classList.add('open');
@@ -1718,6 +2629,29 @@ var _hmt = _hmt || [];
             sortAscending = !sortAscending;
             document.getElementById('sort-icon').textContent = sortAscending ? '↑↓' : '↓↑';
             filterAndSortCards();
+        }
+
+        // 添加新的函数来显示和关闭用户积分模态框
+        function showUserPoints() {
+            fetch('/api/user/points')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('userPointsDisplay').textContent = data.points;
+                    document.getElementById('userPointsModal').style.display = 'block';
+                })
+                .catch(error => console.error('Error fetching user points:', error));
+        }
+
+        function closeUserPointsModal() {
+            document.getElementById('userPointsModal').style.display = 'none';
+        }
+
+        // 点击模态框外部时关闭模态框
+        window.onclick = function(event) {
+            var modal = document.getElementById('userPointsModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -1772,8 +2706,8 @@ var _hmt = _hmt || [];
 </html>
 
 
-    login.ejs
-      内容：
+
+    /Users/momo/Desktop/info-index/views/login.ejs的内容是:
       <!DOCTYPE html>
 <html lang="zh">
 <head>
@@ -1786,17 +2720,26 @@ var _hmt = _hmt || [];
             font-family: Arial, sans-serif;
             background-color: #f0f2f5;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
+            padding: 20px;
+        }
+        .logo {
+            margin-bottom: 30px;
+            max-width: 250px; /* 增大 logo 的最大宽度 */
+            width: 80%; /* 使 logo 在小屏幕上也能自适应 */
+            height: auto;
         }
         .login-container {
             background-color: white;
             padding: 2rem;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            width: 300px;
+            width: 100%;
+            max-width: 350px; /* 稍微增加容器宽度 */
         }
         h1 {
             text-align: center;
@@ -1845,6 +2788,7 @@ var _hmt = _hmt || [];
     </style>
 </head>
 <body>
+    <img src="/images/logo.png" alt="网站Logo" class="logo">
     <div class="login-container">
         <h1>登录</h1>
         <% if (locals.registered) { %>
@@ -1864,14 +2808,14 @@ var _hmt = _hmt || [];
             </div>
             <button type="submit">登录</button>
         </form>
-        <p class="message">还没有账号？<a href="/register">注册</a></p>
+        <!-- <p class="message">还没有账号？<a href="/register">注册</a></p> -->
     </div>
 </body>
 </html>
 
 
-    register.ejs
-      内容：
+
+    /Users/momo/Desktop/info-index/views/register.ejs的内容是:
       <!DOCTYPE html>
 <html lang="zh">
 <head>
@@ -1884,17 +2828,25 @@ var _hmt = _hmt || [];
             font-family: Arial, sans-serif;
             background-color: #f0f2f5;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
+            padding: 20px;
+        }
+        .logo {
+            margin-bottom: 20px;
+            max-width: 150px;
+            height: auto;
         }
         .register-container {
             background-color: white;
             padding: 2rem;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            width: 300px;
+            width: 100%;
+            max-width: 300px;
         }
         h1 {
             text-align: center;
@@ -1943,6 +2895,7 @@ var _hmt = _hmt || [];
     </style>
 </head>
 <body>
+    <img src="/images/logo.png" alt="网站Logo" class="logo">
     <div class="register-container">
         <h1>注册</h1>
         <% if (locals.error) { %>
@@ -1957,11 +2910,12 @@ var _hmt = _hmt || [];
                 <label for="password">密码：</label>
                 <input type="password" id="password" name="password" required>
             </div>
-            <button type="submit">注册</button>
+            <!-- <button type="submit">注册</button> -->
         </form>
         <p class="message">已有账号？<a href="/login">登录</a></p>
     </div>
 </body>
 </html>
+
 
 

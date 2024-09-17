@@ -153,6 +153,10 @@
                 <div id="commentList"></div>
                 <button type="button" onclick="addCommentInput()">添加评论</button>
             </div>
+            <div>
+                <label for="hiddenContent">隐藏内容:</label>
+                <textarea id="hiddenContent" name="hiddenContent" rows="4" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"></textarea>
+            </div>
             <div class="button-group">
                 <button type="button" class="btn btn-secondary" onclick="window.close()">返回</button>
                 <button type="submit" class="btn btn-primary"><%= contentId ? '更新内容' : '添加内容' %></button>
