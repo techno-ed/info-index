@@ -172,15 +172,28 @@
             fetch(`/admin/content/${contentId}`)
                 .then(response => response.json())
                 .then(content => {
+                    console.log('从服务器获取的内容:', content);
                     document.getElementById('simpleInfo').value = content.simpleInfo;
                     document.getElementById('location').value = content.location;
                     document.getElementById('price').value = content.price;
                     document.getElementById('area').value = content.area;
-                    document.getElementById('detailEditor').innerHTML = JSON.parse(content.detail);
+                    document.getElementById('detailEditor').innerHTML = content.detail;
                     document.getElementById('previewImage').src = content.preview;
+                    document.getElementById('hiddenContent').value = content.hiddenContent;
                     
-                    const comments = JSON.parse(content.commnet);
+                    console.log('原始评论数据:', content.commnet);
+                    let comments;
+                    try {
+                        comments = typeof content.commnet === 'string' ? JSON.parse(content.commnet) : content.commnet;
+                    } catch (e) {
+                        console.error('解析评论失败:', e);
+                        comments = [];
+                    }
+                    console.log('解析后的评论:', comments);
                     comments.forEach(comment => addCommentInput(comment));
+                })
+                .catch(error => {
+                    console.error('获取内容时出错:', error);
                 });
         }
 
@@ -225,6 +238,7 @@
         }
 
         function addCommentInput(value = '') {
+            console.log('添加评论输入框，值为:', value);
             const commentList = document.getElementById('commentList');
             const commentItem = document.createElement('div');
             commentItem.className = 'commentItem';
@@ -241,39 +255,48 @@
 
             // 处理详情
             const detailEditor = document.getElementById('detailEditor');
-            formData.set('detail', detailEditor.innerHTML);  // 直接设置 HTML 内容，不使用 JSON.stringify
+            formData.set('detail', detailEditor.innerHTML);
 
             // 处理评论
             const comments = Array.from(document.querySelectorAll('#commentList input'))
                 .map(input => input.value)
                 .filter(comment => comment.trim() !== '');
-            formData.set('commnet', JSON.stringify(comments));  // 评论仍然需要 JSON.stringify，因为它是一个数组
+            console.log('提交前的评论数组:', comments);
+            
+            // 将评论数组转换为 JSON 字符串
+            formData.set('commnet', JSON.stringify(comments));
+
+            console.log('FormData 内容:');
+            for (let [key, value] of formData.entries()) {
+                console.log(key, typeof value, value);
+            }
 
             const url = contentId ? `/admin/content/${contentId}` : '/admin/content';
             const method = contentId ? 'PUT' : 'POST';
 
-            fetch(url, { method, body: formData })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        alert(data.error);
+            fetch(url, { 
+                method, 
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    if (contentId) {
+                        alert('内容更新成功');
+                        window.opener.location.reload();
+                        window.close();
                     } else {
-                        if (contentId) {
-                            // 更新成功，关闭页面
-                            alert('内容更新成功');
-                            window.opener.location.reload(); // 刷新父窗口
-                            window.close(); // 关闭当前窗口
-                        } else {
-                            // 添加成功，清除表单
-                            alert('内容添加成功');
-                            clearForm();
-                            window.opener.location.reload(); // 刷新父窗口
-                        }
+                        alert('内容添加成功');
+                        clearForm();
+                        window.opener.location.reload();
                     }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
+                }
+            })
+            .catch(error => {
+                console.error('提交表单时出错:', error);
+            });
         };
 
         // 添加清除表单的函数

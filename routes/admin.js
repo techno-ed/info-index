@@ -25,7 +25,6 @@ router.get('/users', async (req, res) => {
         const users = await User.findAll({
             attributes: ['id', 'username', 'role', 'points']
         });
-        console.log('Users fetched:', users);
         res.json(users);
     } catch (error) {
         console.error('Error fetching users:', error);
@@ -91,6 +90,14 @@ router.post('/content', upload.single('preview'), async (req, res) => {
         const { simpleInfo, location, price, area, detail, commnet, hiddenContent } = req.body;
         const preview = req.file ? `/uploads/${req.file.filename}` : null;
 
+        let parsedCommnet;
+        try {
+            parsedCommnet = JSON.parse(commnet);
+        } catch (e) {
+            console.error('解析 commnet 失败:', e);
+            parsedCommnet = [];
+        }
+
         const newContent = await Content.create({ 
             simpleInfo, 
             preview, 
@@ -98,9 +105,11 @@ router.post('/content', upload.single('preview'), async (req, res) => {
             price: parseFloat(price), 
             area, 
             detail: detail || '',
-            commnet: JSON.stringify(commnet),
-            hiddenContent: hiddenContent || '' // 添加隐藏内容字段
+            commnet: parsedCommnet,
+            hiddenContent: hiddenContent || ''
         });
+
+        console.log('Created content:', JSON.stringify(newContent, null, 2));
 
         res.status(201).json({ message: '内容创建成功', content: newContent });
     } catch (error) {
@@ -111,7 +120,6 @@ router.post('/content', upload.single('preview'), async (req, res) => {
 
 // 添加新内容路由
 router.get('/content/add', (req, res) => {
-    console.log('访问添加内容页面');
     res.render('admin/content-form', { title: '添加新内容', contentId: null });
 });
 
@@ -144,14 +152,15 @@ router.put('/content/:id', upload.single('preview'), async (req, res) => {
         }
 
         const { simpleInfo, location, price, area, detail, commnet, hiddenContent } = req.body;
+
         const updateData = { 
             simpleInfo, 
             location, 
             price: parseFloat(price), 
             area, 
             detail: detail || '',
-            commnet: JSON.stringify(commnet),
-            hiddenContent: hiddenContent || '' // 添加隐藏内容字段
+            commnet: commnet,
+            hiddenContent: hiddenContent || ''
         };
 
         if (req.file) {
@@ -166,6 +175,8 @@ router.put('/content/:id', upload.single('preview'), async (req, res) => {
         }
 
         await content.update(updateData);
+        console.log('Updated content:', JSON.stringify(content, null, 2));
+
         res.json({ message: '内容更新成功', content });
     } catch (error) {
         console.error('Error updating content:', error);
@@ -202,7 +213,7 @@ router.post('/upload-image', upload.single('image'), (req, res) => {
 
 // 确保这个路由已经定义
 router.put('/users/:id/points', async (req, res) => {
-    console.log('收到更新积分请求:', req.params, req.body);
+    
     try {
         const { id } = req.params;
         const { points } = req.body;

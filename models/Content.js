@@ -37,7 +37,7 @@ const Content = sequelize.define('Content', {
   },
   commnet: {
     type: DataTypes.JSON,
-    allowNull: false
+    allowNull: true
   }
 });
 

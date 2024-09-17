@@ -9,23 +9,41 @@ exports.getHomePage = async (req, res, next) => {
       raw: true
     });
 
+    console.log('从数据库获取的原始内容:', JSON.stringify(content, null, 2));
+
     const formattedContent = {
       code: 200,
       data: await Promise.all(content.map(async (item) => {
+        console.log(`处理 ID ${item.id} 的内容`);
+        console.log(`原始 commnet 值:`, item.commnet);
+
         let commnet = [];
         if (typeof item.commnet === 'string') {
           try {
             const cleanedCommnet = item.commnet.trim().replace(/^\uFEFF/, '');
             commnet = JSON.parse(cleanedCommnet);
+            console.log(`解析后的评论 (ID ${item.id}):`, commnet);
           } catch (e) {
             console.warn(`无法解析 ID ${item.id} 的 commnet 字段:`, e);
           }
+        } else if (Array.isArray(item.commnet)) {
+          commnet = item.commnet;
+          console.log(`ID ${item.id} 的 commnet 已经是数组:`, commnet);
+        } else {
+          console.log(`ID ${item.id} 的 commnet 既不是字符串也不是数组:`, item.commnet);
         }
 
         let hasPurchased = false;
         if (req.user) {
           hasPurchased = await Order.findOne({ where: { userId: req.user.id, contentId: item.id } });
         }
+
+        console.log(`ID ${item.id} 的处理结果:`, {
+          id: item.id,
+          simpleInfo: item.simpleInfo,
+          commnet: commnet,
+          hasPurchased: !!hasPurchased
+        });
 
         return {
           id: item.id,
@@ -35,15 +53,17 @@ exports.getHomePage = async (req, res, next) => {
           price: item.price,
           area: item.area,
           detail: item.detail,
-          commnet: Array.isArray(commnet) ? commnet : [],
+          commnet: commnet,
           hasPurchased: !!hasPurchased,
           hiddenContent: hasPurchased ? item.hiddenContent : null
         };
       }))
     };
 
+    console.log('发送到前端的格式化内容:', JSON.stringify(formattedContent, null, 2));
+
     res.render('home', { 
-      title: '老师信息大全', 
+      title: '首页', 
       content: formattedContent,
       user: req.user,
       contentPrice

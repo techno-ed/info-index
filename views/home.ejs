@@ -387,6 +387,8 @@ var _hmt = _hmt || [];
         }
 
         function openDetail(card) {
+            console.log('打开详情的卡片数据:', card);
+
             const detailPage = document.getElementById('detail-page');
             const overlay = document.getElementById('overlay');
             const detailContent = document.getElementById('detail-content');
@@ -405,6 +407,8 @@ var _hmt = _hmt || [];
                     ${Array.isArray(card.commnet) ? card.commnet.map(comment => `<div class="comment">${comment}</div>`).join('') : '暂无评论'}
                 </div>
             `;
+
+            console.log('生成的详情 HTML:', detailHtml);
 
             if (card.hasPurchased) {
                 detailHtml += `
