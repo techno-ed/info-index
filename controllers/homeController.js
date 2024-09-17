@@ -1,5 +1,6 @@
 const { User, Content, Order } = require('../models');
 const { contentPrice } = require('../config/config');
+const config = require('../config/config');
 
 exports.getHomePage = async (req, res, next) => {
   try {
@@ -66,7 +67,8 @@ exports.getHomePage = async (req, res, next) => {
       title: '首页', 
       content: formattedContent,
       user: req.user,
-      contentPrice
+      contentPrice,
+      customerServiceContact: config.customerService.contact
     });
   } catch (error) {
     console.error('获取内容时出错:', error);

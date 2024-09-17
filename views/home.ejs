@@ -288,6 +288,15 @@ var _hmt = _hmt || [];
             font-size: 12px;
             z-index: 1;
         }
+
+        .customer-service-info {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            font-size: 14px;
+            color: #333;
+        }
     </style>
 </head>
 
@@ -334,8 +343,11 @@ var _hmt = _hmt || [];
     <div id="userPointsModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeUserPointsModal()">&times;</span>
-            <h2>用户积分</h2>
+            <h4>尊贵的用户，你好</h4>
             <p>您当前的积分: <span id="userPointsDisplay"></span></p>
+            <div class="customer-service-info">
+                充值积分请联系客服：<%= customerServiceContact %>
+            </div>
         </div>
     </div>
 
