@@ -93,6 +93,7 @@ var _hmt = _hmt || [];
             overflow: hidden;
             cursor: pointer;
             transition: 0.3s;
+            position: relative; /* 添加这行 */
         }
         .card:hover {
             transform: translateY(-5px);
@@ -275,6 +276,18 @@ var _hmt = _hmt || [];
             padding: 10px;
             margin-bottom: 10px;
         }
+
+        .purchased-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            z-index: 1;
+        }
     </style>
 </head>
 
@@ -349,6 +362,7 @@ var _hmt = _hmt || [];
                 const cardElement = document.createElement('div');
                 cardElement.className = 'card';
                 cardElement.innerHTML = `
+                    ${card.hasPurchased ? '<div class="purchased-badge">已购买</div>' : ''}
                     <div class="card-cover-container">
                         <img src="${card.preview}" alt="卡片${card.id}封面" class="card-cover">
                     </div>
@@ -417,10 +431,10 @@ var _hmt = _hmt || [];
                 `;
             } else if (<%= user ? 'true' : 'false' %>) {
                 detailHtml += `
-                    <button onclick="confirmPurchase(${card.id})" class="purchase-btn">购买隐藏信息 (需要 <%= contentPrice %> 积分)</button>
+                    <button onclick="confirmPurchase(${card.id})" class="purchase-btn">购买联系方式 (需要 <%= contentPrice %> 积分)</button>
                 `;
             } else {
-                detailHtml += `<p>请<a href="/login">登录</a>后购买隐藏内容</p>`;
+                detailHtml += `<p>请<a href="/login">登录</a>后购买联系方式</p>`;
             }
 
             // 使用 DOMPurify 清理 HTML（如果已引入）
