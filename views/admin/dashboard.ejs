@@ -257,7 +257,7 @@
                                         <button onclick="window.open('/admin/content/edit/${item.id}', '_blank')">编辑</button>
                                         <button onclick="deleteContent(${item.id})">删除</button>
                                         <div>详情: ${item.detail ? item.detail.substring(0, 50) : 'N/A'}...</div>
-                                        <div>评论数: ${item.commnet ? JSON.parse(item.commnet).length : 0}</div>
+                                        <div>评论数: ${Array.isArray(item.commnet) ? item.commnet.length : 0}</div>
                                     </td>
                                 </tr>
                             `;
