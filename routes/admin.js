@@ -52,7 +52,7 @@ router.post('/users', async (req, res) => {
 // 删除用户
 router.delete('/users/:id', async (req, res) => {
     const { id } = req.params;
-    console.log(`尝���删除用户，ID: ${id}`);
+    console.log(`尝删除用户，ID: ${id}`);
 
     try {
         // 首先检查用户是否存在
@@ -129,7 +129,7 @@ const upload = multer({ storage: imageStorage });
 // 添加新内容
 router.post('/content', upload.single('preview'), async (req, res) => {
     try {
-        const { simpleInfo, location, price, area, detail, commnet, hiddenContent } = req.body;
+        const { simpleInfo, location, price, area, detail, commnet, hiddenContent, city } = req.body;
         const preview = req.file ? `/uploads/${req.file.filename}` : null;
 
         let parsedCommnet;
@@ -148,7 +148,8 @@ router.post('/content', upload.single('preview'), async (req, res) => {
             area, 
             detail: detail || '',
             commnet: parsedCommnet,
-            hiddenContent: hiddenContent || ''
+            hiddenContent: hiddenContent || '',
+            city // 添加 city 字段
         });
 
         console.log('Created content:', JSON.stringify(newContent, null, 2));
@@ -193,7 +194,7 @@ router.put('/content/:id', upload.single('preview'), async (req, res) => {
             return res.status(404).json({ error: '内容不存在' });
         }
 
-        const { simpleInfo, location, price, area, detail, commnet, hiddenContent } = req.body;
+        const { simpleInfo, location, price, area, detail, commnet, hiddenContent, city } = req.body;
 
         const updateData = { 
             simpleInfo, 
@@ -202,7 +203,8 @@ router.put('/content/:id', upload.single('preview'), async (req, res) => {
             area, 
             detail: detail || '',
             commnet: commnet,
-            hiddenContent: hiddenContent || ''
+            hiddenContent: hiddenContent || '',
+            city // 添加 city 字段
         };
 
         if (req.file) {

@@ -112,6 +112,10 @@
         .btn-secondary:hover {
             background-color: #7f8c8d;
         }
+        .separator {
+            border-top: 1px dashed #ccc;
+            margin: 35px 0;
+        }
     </style>
 </head>
 <body>
@@ -123,40 +127,53 @@
                 <label for="simpleInfo">简介:</label>
                 <input type="text" id="simpleInfo" name="simpleInfo" required>
             </div>
+            <div class="separator"></div>
             <div>
                 <label for="preview">预览:</label>
                 <input type="file" id="preview" name="preview" accept="image/*" <%= contentId ? '' : 'required' %>>
                 <% if (contentId) { %>
-                    <img id="previewImage" src="" alt="当前预览图" style="max-width:200px;">
+                    <img id="previewImage" src="" alt="当前预览图" style="max-width:100px;">
                 <% } %>
             </div>
-            <div>
-                <label for="location">位置:</label>
-                <input type="text" id="location" name="location" required>
+            <div class="separator"></div>
+            <div style="display: flex; justify-content: space-between;">
+                <div style="width: 32%;">
+                    <label for="city">城市:</label>
+                    <input type="text" id="city" name="city" required>
+                </div>
+                <div style="width: 32%;">
+                    <label for="area">区域:</label>
+                    <input type="text" id="area" name="area" required>
+                </div>
+                <div style="width: 32%;">
+                    <label for="location">位置:</label>
+                    <input type="text" id="location" name="location" required>
+                </div>
             </div>
+            <div class="separator"></div>
             <div>
                 <label for="price">价格:</label>
                 <input type="number" id="price" name="price" required>
             </div>
-            <div>
-                <label for="area">区域:</label>
-                <input type="text" id="area" name="area" required>
-            </div>
+            <div class="separator"></div>
             <div>
                 <label for="detailEditor">详细信息:</label>
                 <div id="detailEditor" contenteditable="true"></div>
                 <input type="file" id="detailImage" accept="image/*">
                 <button type="button" onclick="insertImage()">插入图片</button>
             </div>
+            <div class="separator"></div>
             <div>
                 <label for="commentList">评论:</label>
                 <div id="commentList"></div>
                 <button type="button" onclick="addCommentInput()">添加评论</button>
             </div>
+            <div class="separator"></div>
             <div>
                 <label for="hiddenContent">隐藏内容:</label>
                 <textarea id="hiddenContent" name="hiddenContent" rows="4" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"></textarea>
             </div>
+            <div class="separator"></div>
             <div class="button-group">
                 <button type="button" class="btn btn-secondary" onclick="window.close()">返回</button>
                 <button type="submit" class="btn btn-primary"><%= contentId ? '更新内容' : '添加内容' %></button>
@@ -191,6 +208,8 @@
                     }
                     console.log('解析后的评论:', comments);
                     comments.forEach(comment => addCommentInput(comment));
+                    
+                    document.getElementById('city').value = content.city;
                 })
                 .catch(error => {
                     console.error('获取内容时出错:', error);
@@ -265,6 +284,9 @@
             
             // 将评论数组转换为 JSON 字符串
             formData.set('commnet', JSON.stringify(comments));
+
+            // 确保 city 字段被包含在 formData 中
+            formData.set('city', document.getElementById('city').value);
 
             console.log('FormData 内容:');
             for (let [key, value] of formData.entries()) {
