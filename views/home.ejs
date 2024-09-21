@@ -40,6 +40,14 @@ var _hmt = _hmt || [];
             align-items: center;
             margin-bottom: 10px;
         }
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        .logo-image {
+            max-height: 30px;
+            width: auto;
+        }
         .title {
             font-size: 24px;
             margin: 0;
@@ -370,7 +378,10 @@ var _hmt = _hmt || [];
         <div class="main-content">
             <div class="header">
                 <div class="header-top">
-                    <h1 class="title">老师信息大全</h1>
+                    <!-- 将h1标题替换为logo图片 -->
+                    <div class="logo">
+                        <img src="/images/logo.png" alt="网站Logo" class="logo-image">
+                    </div>
                     <div class="user-info">
                         <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
                             欢迎, <%= user.username %> | <a href="/logout">登出</a> | <a href="/admin">管理页面</a>
@@ -387,8 +398,8 @@ var _hmt = _hmt || [];
                     </div>
                     <div class="filter-buttons">
                         <button id="sort-button">编号：正序</button>
-                        <button id="area-filter-button">选择地区</button>
                         <button id="city-filter-button">选择城市</button>
+                        <button id="area-filter-button">选择地区</button>
                     </div>
                 </div>
             </div>
