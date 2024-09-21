@@ -21,4 +21,10 @@ const Order = sequelize.define('Order', {
   }
 });
 
+// 添加关联方法
+Order.associate = (models) => {
+  Order.belongsTo(models.User, { foreignKey: 'userId', as: 'User' });
+  Order.belongsTo(models.Content, { foreignKey: 'contentId', as: 'Content' });
+};
+
 module.exports = Order;

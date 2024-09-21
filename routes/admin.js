@@ -6,6 +6,8 @@ const isAdmin = require('../middlewares/isAdmin');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { Op } = require('sequelize');
+const Order = require('../models/Order'); // 确保您有一个 Order 模型
 
 // 将 isAdmin 中间件应用到所有管理员路由
 router.use(isAdmin);
@@ -50,11 +52,51 @@ router.post('/users', async (req, res) => {
 // 删除用户
 router.delete('/users/:id', async (req, res) => {
     const { id } = req.params;
+    console.log(`尝���删除用户，ID: ${id}`);
+
     try {
-        await User.destroy({ where: { id } });
-        res.json({ message: '用户删除成功' });
+        // 首先检查用户是否存在
+        const user = await User.findByPk(id);
+        if (!user) {
+            console.log(`未找到 ID 为 ${id} 的用户`);
+            return res.status(404).json({ error: '用户不存在' });
+        }
+
+        console.log(`找到用户，准备删除：`, user.toJSON());
+
+        // 尝试删除用户
+        const deletedCount = await User.destroy({
+            where: { id: { [Op.eq]: id } }
+        });
+
+        console.log(`删除操作影响的行数: ${deletedCount}`);
+
+        if (deletedCount === 1) {
+            console.log(`成功删除用户，ID: ${id}`);
+            res.json({ message: '用户删除成功' });
+        } else {
+            console.log(`删除操作未影响任何行，可能用户已被删除，ID: ${id}`);
+            res.status(404).json({ error: '用户不存在或已被删除' });
+        }
     } catch (error) {
-        res.status(500).json({ error: '删除用户失败' });
+        console.error('删除用户时发生错误:', error);
+        res.status(500).json({ 
+            error: '删除用户失败', 
+            message: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+
+    // 删除操作后再次检查用户是否还存在
+    try {
+        const userAfterDelete = await User.findByPk(id);
+        if (userAfterDelete) {
+            console.log(`警告：删除操作后用户仍然存在，ID: ${id}`);
+        } else {
+            console.log(`确认：用户已成功从数据库中删除，ID: ${id}`);
+        }
+    } catch (error) {
+        console.error('删除后检查用户时发生错误:', error);
     }
 });
 
@@ -211,7 +253,7 @@ router.post('/upload-image', upload.single('image'), (req, res) => {
     }
 });
 
-// 确保这个路由已经定义
+// 确保这个由已经定义
 router.put('/users/:id/points', async (req, res) => {
     
     try {
@@ -242,6 +284,39 @@ router.put('/users/:id/points', async (req, res) => {
     } catch (error) {
         console.error('更新用户积分时发生错误:', error);
         res.status(500).json({ error: '更新积分失败', details: error.message });
+    }
+});
+
+// 获取所有订单
+router.get('/orders', async (req, res) => {
+    try {
+        const orders = await Order.findAll({
+            include: [
+                { model: User, as: 'User', attributes: ['id', 'username'] },
+                { model: Content, as: 'Content', attributes: ['id', 'simpleInfo'] }
+            ],
+            order: [['createdAt', 'DESC']]
+        });
+        res.json(orders);
+    } catch (error) {
+        console.error('Error fetching orders:', error);
+        res.status(500).json({ error: '获取订单列表失败' });
+    }
+});
+
+// 删除订单
+router.delete('/orders/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const deletedCount = await Order.destroy({ where: { id } });
+        if (deletedCount === 1) {
+            res.json({ message: '订单删除成功' });
+        } else {
+            res.status(404).json({ error: '订单不存在或已被删除' });
+        }
+    } catch (error) {
+        console.error('删除订单时发生错误:', error);
+        res.status(500).json({ error: '删除订单失败', details: error.message });
     }
 });
 

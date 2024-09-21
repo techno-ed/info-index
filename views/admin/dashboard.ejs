@@ -95,12 +95,37 @@
                 font-size: 12px;
             }
         }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            background-color: #f1f1f1;
+        }
+        .tab.active {
+            background-color: #fff;
+            border-bottom: none;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
     <h1>管理员仪表板</h1>
+    <div class="tabs">
+        <div class="tab active" onclick="openTab(event, 'users')">用户管理</div>
+        <div class="tab" onclick="openTab(event, 'content')">内容管理</div>
+        <div class="tab" onclick="openTab(event, 'orders')">订单管理</div>
+    </div>
     <div class="container">
-        <div class="section">
+        <div id="users" class="tab-content active">
             <h2>用户管理</h2>
             <div style="overflow-x: auto;">
                 <table id="userTable">
@@ -130,7 +155,7 @@
                 <input type="submit" value="添加用户">
             </form>
         </div>
-        <div class="section">
+        <div id="content" class="tab-content">
             <h2>内容管理</h2>
             <button onclick="location.href='/admin/content/add'">添加新内容</button>
             <div style="overflow-x: auto;">
@@ -148,6 +173,26 @@
                     </thead>
                     <tbody>
                         <!-- 内容数据将通过 JavaScript 动态加载 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div id="orders" class="tab-content">
+            <h2>订单管理</h2>
+            <div style="overflow-x: auto;">
+                <table id="orderTable">
+                    <thead>
+                        <tr>
+                            <th>订单ID</th>
+                            <th>用户</th>
+                            <th>内容ID</th>
+                            <th>内容简介</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 订单数据将通过 JavaScript 动态加载 -->
                     </tbody>
                 </table>
             </div>
@@ -281,7 +326,21 @@
         function deleteUser(id) {
             if (confirm('确定要删除这个用户吗？')) {
                 fetch(`/admin/users/${id}`, { method: 'DELETE' })
-                    .then(() => loadUsers());
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => Promise.reject(err));
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('删除成功:', data.message);
+                        alert('用户删除成功');
+                        loadUsers();
+                    })
+                    .catch(error => {
+                        console.error('删除失败:', error);
+                        alert('删除用户失败: ' + (error.error || '未知错误'));
+                    });
             }
         }
 
@@ -318,9 +377,80 @@
             });
         };
 
-        // 初始加载数据
-        loadUsers();
-        loadContent();
+        // 添加新的函数用于加载订单
+        function loadOrders() {
+            fetch('/admin/orders')
+                .then(response => response.json())
+                .then(orders => {
+                    const tbody = document.querySelector('#orderTable tbody');
+                    tbody.innerHTML = '';
+                    orders.forEach(order => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${order.id}</td>
+                                <td>${order.User ? order.User.username : 'N/A'}</td>
+                                <td>${order.Content ? order.Content.id : 'N/A'}</td>
+                                <td>${order.Content ? order.Content.simpleInfo : 'N/A'}</td>
+                                <td>${new Date(order.createdAt).toLocaleString()}</td>
+                                <td><button onclick="deleteOrder(${order.id})">删除</button></td>
+                            </tr>
+                        `;
+                    });
+                })
+                .catch(error => console.error('Error loading orders:', error));
+        }
+
+        // 删除订单
+        function deleteOrder(id) {
+            if (confirm('确定要删除这个订单吗？')) {
+                fetch(`/admin/orders/${id}`, { method: 'DELETE' })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => Promise.reject(err));
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('删除成功:', data.message);
+                        alert('订单删除成功');
+                        loadOrders();
+                    })
+                    .catch(error => {
+                        console.error('删除失败:', error);
+                        alert('删除订单失败: ' + (error.error || '未知错误'));
+                    });
+            }
+        }
+
+        // 标签切换函数
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tab");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+
+            // 加载相应的数据
+            if (tabName === 'users') {
+                loadUsers();
+            } else if (tabName === 'content') {
+                loadContent();
+            } else if (tabName === 'orders') {
+                loadOrders();
+            }
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 默认显示用户管理标签
+            document.querySelector('.tab').click();
+        });
     </script>
 </body>
 </html>
