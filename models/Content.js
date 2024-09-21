@@ -23,6 +23,10 @@ const Content = sequelize.define('Content', {
     type: DataTypes.FLOAT,
     allowNull: false
   },
+  city: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
   area: {
     type: DataTypes.STRING,
     allowNull: false

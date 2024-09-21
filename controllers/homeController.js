@@ -15,21 +15,17 @@ exports.getHomePage = async (req, res, next) => {
     const formattedContent = {
       code: 200,
       data: await Promise.all(content.map(async (item) => {
-        console.log(`处理 ID ${item.id} 的内容`);
-        console.log(`原始 commnet 值:`, item.commnet);
 
         let commnet = [];
         if (typeof item.commnet === 'string') {
           try {
             const cleanedCommnet = item.commnet.trim().replace(/^\uFEFF/, '');
             commnet = JSON.parse(cleanedCommnet);
-            console.log(`解析后的评论 (ID ${item.id}):`, commnet);
           } catch (e) {
             console.warn(`无法解析 ID ${item.id} 的 commnet 字段:`, e);
           }
         } else if (Array.isArray(item.commnet)) {
           commnet = item.commnet;
-          console.log(`ID ${item.id} 的 commnet 已经是数组:`, commnet);
         } else {
           console.log(`ID ${item.id} 的 commnet 既不是字符串也不是数组:`, item.commnet);
         }
@@ -53,6 +49,7 @@ exports.getHomePage = async (req, res, next) => {
           location: item.location,
           price: item.price,
           area: item.area,
+          city: item.city,
           detail: item.detail,
           commnet: commnet,
           hasPurchased: !!hasPurchased,

@@ -32,8 +32,6 @@ var _hmt = _hmt || [];
             width: 100%;
         }
         .header {
-            display: flex;
-            flex-direction: column;
             margin-bottom: 20px;
         }
         .header-top {
@@ -50,28 +48,39 @@ var _hmt = _hmt || [];
             font-size: 14px;
             white-space: nowrap;
         }
+        .search-filter-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
         .search-bar {
             display: flex;
             align-items: center;
             gap: 10px;
-            flex-wrap: wrap;
         }
         #search-input {
-            flex-grow: 1;
-            flex-basis: 100%;
+            width: 100%;
             padding: 8px 15px;
             border: 1px solid #ddd;
             border-radius: 20px;
             font-size: 14px;
         }
-        #sort-button, #area-filter-button {
-            padding: 8px 8px;
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: nowrap;
+        }
+        #sort-button, #area-filter-button, #city-filter-button {
+            padding: 8px 15px;
             border: 1px solid #ddd;
             border-radius: 20px;
             background-color: white;
             cursor: pointer;
             font-size: 14px;
             white-space: nowrap;
+            min-width: 100px;
+            text-align: center;
         }
         .card-list {
             display: grid;
@@ -165,19 +174,12 @@ var _hmt = _hmt || [];
         }
         
         @media (min-width: 769px) {
-            .header {
-                flex-direction: row;
-                align-items: center;
+            .search-filter-container {
+                flex-wrap: nowrap;
             }
-            .header-top {
-                margin-bottom: 0;
-                margin-right: 20px;
-            }
-            .title {
-                margin-right: 20px;
-            }
-            .search-bar {
-                flex-grow: 1;
+
+            .filter-buttons {
+                flex: 0 0 auto;
             }
         }
 
@@ -186,26 +188,22 @@ var _hmt = _hmt || [];
                 grid-template-columns: repeat(2, 1fr);
                 gap: 10px;
             }
-            .header {
-                flex-direction: column;
-                align-items: stretch;
-            }
             .title {
                 margin-bottom: 15px;
                 text-align: center;
                 font-size: 20px;
             }
             .search-bar {
-                margin-bottom: 15px;
+                flex-basis: 100%;
+                max-width: none;
+            }
+            .filter-buttons {
+                flex-basis: 100%;
                 justify-content: space-between;
             }
-            #search-input {
-                width: 100%;
-                margin-bottom: 10px;
-            }
-            #sort-button, #area-filter-button {
-                flex-basis: calc(50% - 5px);
-                margin-top: 10px;
+            #sort-button, #area-filter-button, #city-filter-button {
+                flex: 1 1 0;
+                min-width: 0;
             }
             .user-info {
                 margin-left: 0;
@@ -338,8 +336,28 @@ var _hmt = _hmt || [];
             color: white;
         }
 
+        #city-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .city-item {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .city-item.selected {
+            background-color: #4CAF50;
+            color: white;
+        }
+
         @media (max-width: 768px) {
-            #area-filter-button {
+            #area-filter-button, #city-filter-button {
                 width: 100%;
                 margin-top: 10px;
             }
@@ -363,13 +381,15 @@ var _hmt = _hmt || [];
                         <% } %>
                     </div>
                 </div>
-                <div class="search-bar">
-                    <input type="text" id="search-input" placeholder="搜索...">
-                    <button id="sort-button">
-                        <span id="sort-icon">↑↓</span>
-                        编号
-                    </button>
-                    <button id="area-filter-button">选择地区</button>
+                <div class="search-filter-container">
+                    <div class="search-bar">
+                        <input type="text" id="search-input" placeholder="搜索...">
+                    </div>
+                    <div class="filter-buttons">
+                        <button id="sort-button">编号：正序</button>
+                        <button id="area-filter-button">选择地区</button>
+                        <button id="city-filter-button">选择城市</button>
+                    </div>
                 </div>
             </div>
             <div class="card-list" id="card-container"></div>
@@ -403,11 +423,26 @@ var _hmt = _hmt || [];
         </div>
     </div>
 
+    <!-- 添加城市模态框 -->
+    <div id="city-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>选择城市</h2>
+            <div id="city-list"></div>
+        </div>
+    </div>
+
     <script>
         let cardData = <%- JSON.stringify(content.data) %>;
         let sortAscending = true;
         let isDetailOpen = false;
         let selectedArea = '';
+        let selectedCity = '';
+
+        function populateFilters() {
+            populateAreaFilter();
+            populateCityFilter();
+        }
 
         function populateAreaFilter() {
             const areaList = document.getElementById('area-list');
@@ -421,6 +456,18 @@ var _hmt = _hmt || [];
             });
         }
 
+        function populateCityFilter() {
+            const cityList = document.getElementById('city-list');
+            const cities = [...new Set(cardData.map(card => card.city))];
+            cities.forEach(city => {
+                const cityItem = document.createElement('div');
+                cityItem.className = 'city-item';
+                cityItem.textContent = city;
+                cityItem.onclick = () => selectCity(city);
+                cityList.appendChild(cityItem);
+            });
+        }
+
         function selectArea(area) {
             selectedArea = area === selectedArea ? '' : area;
             document.querySelectorAll('.area-item').forEach(item => {
@@ -428,6 +475,15 @@ var _hmt = _hmt || [];
             });
             filterAndSortCards();
             closeModal();
+        }
+
+        function selectCity(city) {
+            selectedCity = city === selectedCity ? '' : city;
+            document.querySelectorAll('.city-item').forEach(item => {
+                item.classList.toggle('selected', item.textContent === selectedCity);
+            });
+            filterAndSortCards();
+            closeCityModal();
         }
 
         function renderCards(cards) {
@@ -460,7 +516,8 @@ var _hmt = _hmt || [];
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
             let filteredCards = cardData.filter(card => 
                 (card.simpleInfo.toLowerCase().includes(searchTerm) || card.id.toString().includes(searchTerm)) &&
-                (selectedArea === '' || card.area === selectedArea)
+                (selectedArea === '' || card.area === selectedArea) &&
+                (selectedCity === '' || card.city === selectedCity)
             );
             
             filteredCards.sort((a, b) => {
@@ -583,7 +640,7 @@ var _hmt = _hmt || [];
 
         function toggleSort() {
             sortAscending = !sortAscending;
-            document.getElementById('sort-icon').textContent = sortAscending ? '↑↓' : '↓↑';
+            document.getElementById('sort-button').textContent = sortAscending ? '编号：正序' : '编号：倒序';
             filterAndSortCards();
         }
 
@@ -619,16 +676,29 @@ var _hmt = _hmt || [];
             modal.style.display = 'none';
         }
 
-        // 点击模态框外部时关闭模态框
-        window.onclick = function(event) {
-            var modal = document.getElementById('userPointsModal');
-            if (event.target == modal) {
-                modal.style.display = 'none';
+        // 城市模态框相关函数
+        const cityModal = document.getElementById('city-modal');
+        const cityBtn = document.getElementById('city-filter-button');
+        const citySpan = cityModal.getElementsByClassName('close')[0];
+
+        cityBtn.onclick = () => cityModal.style.display = 'block';
+        citySpan.onclick = closeCityModal;
+        window.onclick = (event) => {
+            if (event.target == cityModal) {
+                closeCityModal();
+            } else if (event.target == modal) {
+                closeModal();
+            } else if (event.target == document.getElementById('userPointsModal')) {
+                closeUserPointsModal();
             }
         }
 
+        function closeCityModal() {
+            cityModal.style.display = 'none';
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
-            populateAreaFilter();
+            populateFilters();
             filterAndSortCards();
 
             document.getElementById('search-input').addEventListener('input', filterAndSortCards);
