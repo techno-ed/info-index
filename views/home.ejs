@@ -54,21 +54,24 @@ var _hmt = _hmt || [];
             display: flex;
             align-items: center;
             gap: 10px;
+            flex-wrap: wrap;
         }
         #search-input {
             flex-grow: 1;
+            flex-basis: 100%;
             padding: 8px 15px;
             border: 1px solid #ddd;
             border-radius: 20px;
             font-size: 14px;
         }
-        #sort-button, #area-filter {
-            padding: 8px 15px;
+        #sort-button, #area-filter-button {
+            padding: 8px 8px;
             border: 1px solid #ddd;
             border-radius: 20px;
             background-color: white;
             cursor: pointer;
             font-size: 14px;
+            white-space: nowrap;
         }
         .card-list {
             display: grid;
@@ -83,7 +86,7 @@ var _hmt = _hmt || [];
             overflow: hidden;
             cursor: pointer;
             transition: 0.3s;
-            position: relative; /* 添加这行 */
+            position: relative;
         }
         .card:hover {
             transform: translateY(-5px);
@@ -91,7 +94,7 @@ var _hmt = _hmt || [];
         }
         .card-cover-container {
             width: 100%;
-            padding-top: 75%; /* 4:3 宽高比 */
+            padding-top: 75%;
             position: relative;
             overflow: hidden;
         }
@@ -194,11 +197,15 @@ var _hmt = _hmt || [];
             }
             .search-bar {
                 margin-bottom: 15px;
-                flex-wrap: wrap;
+                justify-content: space-between;
             }
             #search-input {
                 width: 100%;
                 margin-bottom: 10px;
+            }
+            #sort-button, #area-filter-button {
+                flex-basis: calc(50% - 5px);
+                margin-top: 10px;
             }
             .user-info {
                 margin-left: 0;
@@ -228,9 +235,9 @@ var _hmt = _hmt || [];
             margin: 15% auto;
             padding: 20px;
             border: 1px solid #888;
-            width: 300px;
+            width: 80%;
+            max-width: 500px;
             border-radius: 5px;
-            text-align: center;
         }
 
         .close {
@@ -310,6 +317,33 @@ var _hmt = _hmt || [];
             font-size: 14px;
             color: #333;
         }
+
+        #area-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .area-item {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .area-item.selected {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            #area-filter-button {
+                width: 100%;
+                margin-top: 10px;
+            }
+        }
     </style>
 </head>
 
@@ -335,9 +369,7 @@ var _hmt = _hmt || [];
                         <span id="sort-icon">↑↓</span>
                         编号
                     </button>
-                    <select id="area-filter">
-                        <option value="">所有地区</option>
-                    </select>
+                    <button id="area-filter-button">选择地区</button>
                 </div>
             </div>
             <div class="card-list" id="card-container"></div>
@@ -362,20 +394,40 @@ var _hmt = _hmt || [];
         </div>
     </div>
 
+    <!-- 添加模态框 -->
+    <div id="area-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>选择地区</h2>
+            <div id="area-list"></div>
+        </div>
+    </div>
+
     <script>
         let cardData = <%- JSON.stringify(content.data) %>;
         let sortAscending = true;
         let isDetailOpen = false;
+        let selectedArea = '';
 
         function populateAreaFilter() {
-            const areaFilter = document.getElementById('area-filter');
+            const areaList = document.getElementById('area-list');
             const areas = [...new Set(cardData.map(card => card.area))];
             areas.forEach(area => {
-                const option = document.createElement('option');
-                option.value = area;
-                option.textContent = area;
-                areaFilter.appendChild(option);
+                const areaItem = document.createElement('div');
+                areaItem.className = 'area-item';
+                areaItem.textContent = area;
+                areaItem.onclick = () => selectArea(area);
+                areaList.appendChild(areaItem);
             });
+        }
+
+        function selectArea(area) {
+            selectedArea = area === selectedArea ? '' : area;
+            document.querySelectorAll('.area-item').forEach(item => {
+                item.classList.toggle('selected', item.textContent === selectedArea);
+            });
+            filterAndSortCards();
+            closeModal();
         }
 
         function renderCards(cards) {
@@ -406,7 +458,6 @@ var _hmt = _hmt || [];
 
         function filterAndSortCards() {
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
-            const selectedArea = document.getElementById('area-filter').value;
             let filteredCards = cardData.filter(card => 
                 (card.simpleInfo.toLowerCase().includes(searchTerm) || card.id.toString().includes(searchTerm)) &&
                 (selectedArea === '' || card.area === selectedArea)
@@ -551,6 +602,23 @@ var _hmt = _hmt || [];
             document.getElementById('userPointsModal').style.display = 'none';
         }
 
+        // 模态框相关函数
+        const modal = document.getElementById('area-modal');
+        const btn = document.getElementById('area-filter-button');
+        const span = document.getElementsByClassName('close')[0];
+
+        btn.onclick = () => modal.style.display = 'block';
+        span.onclick = closeModal;
+        window.onclick = (event) => {
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+
         // 点击模态框外部时关闭模态框
         window.onclick = function(event) {
             var modal = document.getElementById('userPointsModal');
@@ -564,7 +632,6 @@ var _hmt = _hmt || [];
             filterAndSortCards();
 
             document.getElementById('search-input').addEventListener('input', filterAndSortCards);
-            document.getElementById('area-filter').addEventListener('change', filterAndSortCards);
             document.getElementById('sort-button').addEventListener('click', toggleSort);
 
             document.addEventListener('click', function(event) {
