@@ -433,7 +433,6 @@
     </div>
 
     <script>
-                
         var _hmt = _hmt || [];
         (function() {
             var hm = document.createElement("script");
@@ -750,6 +749,12 @@
                 } else {
                     console.log('未找到对应 ID 的卡片');
                 }
+            }
+
+            // 新增：上报用户名到百度统计
+            var username = '<%= user ? user.username : "未登录用户" %>';
+            if (window._hmt) {
+                window._hmt.push(['_setUserId', username]);
             }
         });
     </script>
