@@ -149,7 +149,7 @@ router.post('/content', upload.single('preview'), async (req, res) => {
             detail: detail || '',
             commnet: parsedCommnet,
             hiddenContent: hiddenContent || '',
-            city // 添加 city 字段
+            city : city // 添加 city 字段
         });
 
         console.log('Created content:', JSON.stringify(newContent, null, 2));
