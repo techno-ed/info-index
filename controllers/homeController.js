@@ -6,11 +6,9 @@ exports.getHomePage = async (req, res, next) => {
   try {
     const content = await Content.findAll({
       order: [['id', 'ASC']],
-      limit: 50,
+      limit: 200,
       raw: true
     });
-
-    console.log('从数据库获取的原始内容:', JSON.stringify(content, null, 2));
 
     const formattedContent = {
       code: 200,
@@ -35,13 +33,6 @@ exports.getHomePage = async (req, res, next) => {
           hasPurchased = await Order.findOne({ where: { userId: req.user.id, contentId: item.id } });
         }
 
-        console.log(`ID ${item.id} 的处理结果:`, {
-          id: item.id,
-          simpleInfo: item.simpleInfo,
-          commnet: commnet,
-          hasPurchased: !!hasPurchased
-        });
-
         return {
           id: item.id,
           simpleInfo: item.simpleInfo,
@@ -57,9 +48,6 @@ exports.getHomePage = async (req, res, next) => {
         };
       }))
     };
-
-    console.log('发送到前端的格式化内容:', JSON.stringify(formattedContent, null, 2));
-
     res.render('home', { 
       title: '首页', 
       content: formattedContent,
