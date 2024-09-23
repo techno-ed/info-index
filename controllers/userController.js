@@ -1,8 +1,14 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const config = require('../config/config');
 
 exports.register = async (req, res) => {
   try {
+    // 检查是否开放注册
+    if (!config.allowRegistration) {
+      return res.status(403).render('register', { error: '暂不支持开放注册，注册请联系管理员: ' + config.customerService.contact });
+    }
+
     const { username, password } = req.body;
     
     // 检查用户名是否已存在
