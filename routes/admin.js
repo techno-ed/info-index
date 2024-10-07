@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const Content = require('../models/Content');
+const InvitationCode = require('../models/InvitationCode'); // 添加这行
 const isAdmin = require('../middlewares/isAdmin');
 const multer = require('multer');
 const path = require('path');
@@ -30,7 +31,7 @@ router.get('/users', async (req, res) => {
         res.json(users);
     } catch (error) {
         console.error('Error fetching users:', error);
-        res.status(500).json({ error: '获取用户列表失败' });
+        res.status(500).json({ error: '获用户列表失败' });
     }
 });
 
@@ -320,6 +321,58 @@ router.delete('/orders/:id', async (req, res) => {
         console.error('删除订单时发生错误:', error);
         res.status(500).json({ error: '删除订单失败', details: error.message });
     }
+});
+
+// 生成邀请码
+router.post('/generate-invitation-code', async (req, res) => {
+  try {
+    const generateInvitationCode = () => {
+      const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let code = '';
+      for (let i = 0; i < 5; i++) {
+        code += characters.charAt(Math.floor(Math.random() * characters.length));
+      }
+      return code;
+    };
+
+    let code;
+    let isUnique = false;
+    
+    while (!isUnique) {
+      code = generateInvitationCode();
+      const existingCode = await InvitationCode.findOne({ where: { code } });
+      if (!existingCode) {
+        isUnique = true;
+      }
+    }
+
+    await InvitationCode.create({ code });
+    res.json({ success: true, code });
+  } catch (error) {
+    console.error('生成邀请码错误:', error);
+    res.status(500).json({ error: '生成邀请码失败' });
+  }
+});
+
+// 获取所有邀请码
+router.get('/invitation-codes', async (req, res) => {
+  try {
+    
+    const codes = await InvitationCode.findAll({
+      include: [{ 
+        model: User, 
+        as: 'usedByUser', 
+        attributes: ['id', 'username'],
+        required: false
+      }]
+    });
+    
+    console.log('查询结果:', JSON.stringify(codes, null, 2));
+    res.json(codes);
+  } catch (error) {
+    console.error('获取邀请码列表失败:', error);
+    res.status(500).json({ error: '获取邀请码列表失败', details: error.message });
+  }
 });
 
 module.exports = router;

@@ -1,16 +1,20 @@
 const User = require('../models/User');
+const InvitationCode = require('../models/InvitationCode');
 const jwt = require('jsonwebtoken');
 const config = require('../config/config');
 
 exports.register = async (req, res) => {
   try {
-    // 检查是否开放注册
-    if (!config.allowRegistration) {
-      return res.status(403).render('register', { error: '暂不支持开放注册，注册请联系管理员: ' + config.customerService.contact });
+    const { username, password, invitationCode } = req.body;
+
+    // 验证邀请码
+    const code = await InvitationCode.findOne({ 
+      where: { code: invitationCode, isUsed: false } 
+    });
+    if (!code) {
+      return res.status(400).render('register', { error: '无效的邀请码' });
     }
 
-    const { username, password } = req.body;
-    
     // 检查用户名是否已存在
     const existingUser = await User.findOne({ where: { username } });
     if (existingUser) {
@@ -18,11 +22,15 @@ exports.register = async (req, res) => {
     }
 
     // 创建新用户
-    await User.create({
+    const user = await User.create({
       username,
       password,
-      role: 'user'  // 默认角色为普通用户
+      role: 'user',
+      invitationCode: invitationCode
     });
+
+    // 标记邀请码为已使用
+    await code.update({ isUsed: true, usedBy: user.id });
 
     // 重定向到登录页面,并显示成功消息
     res.redirect('/login?registered=true');
@@ -56,7 +64,7 @@ exports.login = async (req, res) => {
     res.redirect('/');
   } catch (error) {
     console.error('登录错误:', error);
-    res.status(500).render('login', { error: '登录失败,请稍后再试' });
+    res.status(500).render('login', { error: '登录失败,请稍后重试' });
   }
 };
 

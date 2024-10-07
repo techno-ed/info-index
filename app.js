@@ -53,9 +53,10 @@ const PORT = process.env.PORT || 3000;
 const User = require('./models/User');
 const Content = require('./models/Content');
 const Order = require('./models/Order');
+const InvitationCode = require('./models/InvitationCode');
 
 // 建立模型关联
-const models = { User, Content, Order };
+const models = { User, Content, Order, InvitationCode };
 Object.keys(models).forEach(modelName => {
   if ('associate' in models[modelName]) {
     models[modelName].associate(models);
@@ -65,6 +66,7 @@ Object.keys(models).forEach(modelName => {
 // 在 sequelize.sync() 之前添加
 User.hasMany(Order, { foreignKey: 'userId', as: 'UserOrders' });
 Content.hasMany(Order, { foreignKey: 'contentId', as: 'ContentOrders' });
+User.hasMany(InvitationCode, { foreignKey: 'usedBy', as: 'usedInvitationCodes'});
 
 sequelize.sync().then(() => {
   app.listen(PORT, () => {

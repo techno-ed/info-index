@@ -19,6 +19,10 @@ const User = sequelize.define('User', {
   points: {  // 新增积分字段
     type: DataTypes.INTEGER,
     defaultValue: 0
+  },
+  invitationCode: {
+    type: DataTypes.STRING(5),
+    allowNull: true
   }
 }, {
   hooks: {

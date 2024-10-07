@@ -11,6 +11,13 @@ const db = new sqlite3.Database(dbPath, (err) => {
   }
 });
 
+// 调用所有模型的 associate 方法
+Object.values(db).forEach(model => {
+  if (model.associate) {
+    model.associate(db);
+  }
+});
+
 function query(sql, params = []) {
   return new Promise((resolve, reject) => {
     db.all(sql, params, (err, rows) => {
