@@ -5,15 +5,7 @@ const config = require('../config/config');
 
 exports.register = async (req, res) => {
   try {
-    const { username, password, invitationCode } = req.body;
-
-    // 验证邀请码
-    const code = await InvitationCode.findOne({ 
-      where: { code: invitationCode, isUsed: false } 
-    });
-    if (!code) {
-      return res.status(400).render('register', { error: '无效的邀请码' });
-    }
+    const { username, password } = req.body;
 
     // 检查用户名是否已存在
     const existingUser = await User.findOne({ where: { username } });
@@ -26,11 +18,8 @@ exports.register = async (req, res) => {
       username,
       password,
       role: 'user',
-      invitationCode: invitationCode
+      points: 0  // 可以设置初始积分，如果需要的话
     });
-
-    // 标记邀请码为已使用
-    await code.update({ isUsed: true, usedBy: user.id });
 
     // 重定向到登录页面,并显示成功消息
     res.redirect('/login?registered=true');
