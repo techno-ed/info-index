@@ -359,6 +359,36 @@
                 margin-top: 10px;
             }
         }
+
+        .user-info-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .balance-warning {
+            color: #e74c3c;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .balance-warning:hover {
+            color: #c0392b;
+        }
+
+        @media (max-width: 768px) {
+            .user-info-container {
+                flex-direction: column;
+                align-items: flex-end;
+            }
+
+            .balance-warning {
+                text-align: right;
+                margin-bottom: 5px;
+            }
+        }
     </style>
 </head>
 
@@ -371,14 +401,19 @@
                     <div class="logo">
                         <img src="/images/logo.png" alt="网站Logo" class="logo-image">
                     </div>
-                    <div class="user-info">
-                        <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
-                            欢迎, <%= user.username %> | <a href="/logout">登出</a> | <a href="/admin">管理页面</a>
-                        <% } else if (typeof user !== 'undefined' && user) { %>
-                            欢迎, <a href="#" class="user-link" onclick="showUserPoints()"><%= user.username %></a> | <a href="/logout">登出</a>
-                        <% } else { %>
-                            <a href="/login">登录</a> | <a href="/register">注册</a>
+                    <div class="user-info-container">
+                        <% if (typeof user !== 'undefined' && user && user.points < 80) { %>
+                            <div class="balance-warning" onclick="showUserPoints()">余额不足，请及时充值</div>
                         <% } %>
+                        <div class="user-info">
+                            <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
+                                欢迎, <%= user.username %> | <a href="/logout">登出</a> | <a href="/admin">管理页面</a>
+                            <% } else if (typeof user !== 'undefined' && user) { %>
+                                欢迎, <a href="#" class="user-link" onclick="showUserPoints()"><%= user.username %></a> | <a href="/logout">登出</a>
+                            <% } else { %>
+                                <a href="/login">登录</a> | <a href="/register">注册</a>
+                            <% } %>
+                        </div>
                     </div>
                 </div>
                 <div class="search-filter-container">
@@ -409,7 +444,7 @@
             <h4>尊贵的用户，你好</h4>
             <p>您当前的积分: <span id="userPointsDisplay"></span></p>
             <div class="customer-service-info">
-                充值积分请联系客服：<%= customerServiceContact %>
+                充值积分请联系客服：<%- customerServiceContact.replace(/\n/g, '<br>') %>
             </div>
         </div>
     </div>
@@ -570,7 +605,7 @@
                 `;
             } else if (<%= user ? 'true' : 'false' %>) {
                 detailHtml += `
-                    <button onclick="confirmPurchase(${card.id})" class="purchase-btn">购买联系方式 (需要 <%= contentPrice %> 积分)</button>
+                    <button onclick="confirmPurchase(${card.id})" class="purchase-btn">购买联系方式 (需要 <%= contentPrice %> 分)</button>
                 `;
             } else {
                 detailHtml += `<p>请<a href="/login">登录</a>后购买联系方式</p>`;
@@ -753,7 +788,7 @@
                 if (card) {
                     openDetail(card);
                 } else {
-                    console.log('未找到对应 ID 的卡片');
+                    console.log('未找到应 ID 的卡片');
                 }
             }
 

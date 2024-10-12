@@ -1,11 +1,33 @@
 const { User, Content, Order } = require('../models');
 const { contentPrice } = require('../config/config');
 const config = require('../config/config');
+const jwt = require('jsonwebtoken');
 
 exports.getHomePage = async (req, res, next) => {
   try {
+    // 获取最新的用户数据
+    const updatedUser = await User.findByPk(req.user.id);
+    if (!updatedUser) {
+      return res.status(404).json({ error: '用户不存在' });
+    }
+
+    // 创建新的 token
+    const newToken = jwt.sign(
+      { 
+        id: updatedUser.id, 
+        username: updatedUser.username, 
+        role: updatedUser.role, 
+        points: updatedUser.points 
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    // 更新 cookie 中的 token
+    res.cookie('token', newToken, { httpOnly: true, maxAge: 3600000 }); // 1小时有效期
+
     let content;
-    if (req.user && req.user.points > 0) {
+    if (updatedUser.points > 0) {
       content = await Content.findAll({
         order: [['id', 'ASC']],
         limit: 200,
@@ -63,7 +85,7 @@ exports.getHomePage = async (req, res, next) => {
     res.render('home', { 
       title: '首页', 
       content: formattedContent,
-      user: req.user,
+      user: updatedUser,
       contentPrice,
       customerServiceContact: config.customerService.contact
     });
