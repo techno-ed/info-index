@@ -43,7 +43,10 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { username, password } = req.body;
-    const user = await User.findOne({ where: { username } });
+    const user = await User.findOne({ 
+      where: { username },
+      attributes: ['id', 'username', 'password', 'role', 'points']
+    });
     if (!user) {
       return res.status(404).render('login', { error: '用户不存在' });
     }
@@ -52,13 +55,21 @@ exports.login = async (req, res) => {
       return res.status(401).render('login', { error: '密码错误' });
     }
     const token = jwt.sign(
-      { id: user.id, username: user.username, role: user.role },
+      { id: user.id, username: user.username, role: user.role, points: user.points },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
     
     // 将 token 存储在 cookie 中
     res.cookie('token', token, { httpOnly: true, maxAge: 3600000 }); // 1小时有效期
+    
+    // 可选：在服务器端会话中存储用户信息
+    req.session.user = {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      points: user.points
+    };
     
     // 重定向到主页
     res.redirect('/');

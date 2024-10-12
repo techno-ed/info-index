@@ -4,11 +4,23 @@ const config = require('../config/config');
 
 exports.getHomePage = async (req, res, next) => {
   try {
-    const content = await Content.findAll({
-      order: [['id', 'ASC']],
-      limit: 200,
-      raw: true
-    });
+    let content;
+    if (req.user && req.user.points > 0) {
+      content = await Content.findAll({
+        order: [['id', 'ASC']],
+        limit: 200,
+        raw: true
+      });
+    } else {
+      content = await Content.findAll({
+        where: {
+          id: 0
+        },
+        order: [['id', 'ASC']],
+        limit: 200,
+        raw: true
+      });
+    }
 
     const formattedContent = {
       code: 200,
