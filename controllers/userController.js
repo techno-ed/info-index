@@ -60,6 +60,9 @@ exports.login = async (req, res) => {
       points: user.points
     };
     
+    // 设置一个标志，表示用户刚刚登录
+    req.session.justLoggedIn = true;
+    
     // 重定向到主页
     res.redirect('/');
   } catch (error) {

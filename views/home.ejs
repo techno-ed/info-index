@@ -804,12 +804,26 @@
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-NQ05S3PNMS"></script>
     <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
 
-    gtag('config', 'G-NQ05S3PNMS');
+        gtag('config', 'G-NQ05S3PNMS');
+
+        // 添加发送事件的函数
+        function sendGAEvent(eventCategory, eventAction, eventLabel) {
+            gtag('event', eventAction, {
+                'event_category': eventCategory,
+                'event_label': eventLabel
+            });
+        }
     </script>
+
+    <% if (locals.justLoggedIn) { %>
+    <script>
+        sendGAEvent('User', 'Login', '<%= user.username %>');
+    </script>
+    <% } %>
 
 </body>
 </html>

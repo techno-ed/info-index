@@ -4,6 +4,10 @@ const config = require('../config/config');
 const jwt = require('jsonwebtoken');
 
 exports.getHomePage = async (req, res, next) => {
+  const justLoggedIn = req.session.justLoggedIn;
+  // 清除标志，以便下次访问不会再次触发
+  req.session.justLoggedIn = false;
+
   try {
     // 获取最新的用户数据
     const updatedUser = await User.findByPk(req.user.id);
@@ -87,7 +91,8 @@ exports.getHomePage = async (req, res, next) => {
       content: formattedContent,
       user: updatedUser,
       contentPrice,
-      customerServiceContact: config.customerService.contact
+      customerServiceContact: config.customerService.contact,
+      justLoggedIn: justLoggedIn
     });
   } catch (error) {
     console.error('获取内容时出错:', error);
