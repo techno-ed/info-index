@@ -1,33 +1,36 @@
-const sqlite3 = require('sqlite3').verbose();
+const mysql = require('mysql2/promise');
 const path = require('path');
 
-const dbPath = path.resolve(__dirname, 'database.sqlite');
+// 创建连接池
+const pool = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
 
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Could not connect to database', err);
-  } else {
+// 测试连接
+pool.getConnection()
+  .then(connection => {
     console.log('Connected to database');
-  }
-});
-
-// 调用所有模型的 associate 方法
-Object.values(db).forEach(model => {
-  if (model.associate) {
-    model.associate(db);
-  }
-});
-
-function query(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(rows);
-      }
-    });
+    connection.release();
+  })
+  .catch(err => {
+    console.error('Could not connect to database', err);
   });
+
+// 查询函数
+async function query(sql, params = []) {
+  try {
+    const [rows] = await pool.execute(sql, params);
+    return rows;
+  } catch (error) {
+    console.error('Query error:', error);
+    throw error;
+  }
 }
 
 module.exports = {

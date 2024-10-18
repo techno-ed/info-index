@@ -32,11 +32,11 @@ const Content = sequelize.define('Content', {
     allowNull: false
   },
   detail: {
-    type: DataTypes.TEXT,
+    type: DataTypes.STRING,
     allowNull: false
   },
   hiddenContent: {
-    type: DataTypes.TEXT,
+    type: DataTypes.STRING,
     allowNull: false
   },
   commnet: {
