@@ -18,20 +18,45 @@ router.get('/', (req, res) => {
     res.render('admin/dashboard');
 });
 
-// 获取所有用户
+// 获取所有用户（带分页和搜索）
 router.get('/users', async (req, res) => {
     try {
-        console.log('User model:', User); // 添加这行
-        if (!User || !User.findAll) {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 50;
+        const offset = (page - 1) * limit;
+        const searchTerm = req.query.search || '';
+
+        if (!User || !User.findAndCountAll) {
             throw new Error('User model is not properly defined');
         }
-        const users = await User.findAll({
-            attributes: ['id', 'username', 'role', 'points']
+
+        const whereClause = searchTerm
+            ? {
+                username: {
+                    [Op.like]: `%${searchTerm}%`
+                }
+            }
+            : {};
+
+        const { count, rows } = await User.findAndCountAll({
+            where: whereClause,
+            attributes: ['id', 'username', 'role', 'points'],
+            limit: limit,
+            offset: offset,
+            order: [['id', 'ASC']]
         });
-        res.json(users);
+
+        const totalPages = Math.ceil(count / limit);
+
+        res.json({
+            users: rows,
+            totalPages: totalPages,
+            currentPage: page,
+            totalUsers: count
+        });
     } catch (error) {
         console.error('Error fetching users:', error);
-        res.status(500).json({ error: '获用户列表失败' });
+        res.status(500).json({ error: '获取用户列表失败', details: error.message });
     }
 });
 

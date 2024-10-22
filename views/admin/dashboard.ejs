@@ -115,19 +115,44 @@
         .tab-content.active {
             display: block;
         }
+        .search-box {
+            margin-bottom: 20px;
+        }
+        .search-box input[type="text"] {
+            width: 70%;
+            padding: 8px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .search-box button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .search-box button:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 <body>
     <h1>管理员仪表板</h1>
     <div class="tabs">
-        <div class="tab active" onclick="openTab(event, 'users')">用户管理</div>
-        <div class="tab" onclick="openTab(event, 'content')">内容管理</div>
-        <div class="tab" onclick="openTab(event, 'orders')">订单管理</div>
-        <div class="tab" onclick="openTab(event, 'invitationCodes')">邀请码管理</div>
+        <div class="tab active" onclick="openTab(event, 'users')">用户</div>
+        <div class="tab" onclick="openTab(event, 'content')">内容</div>
+        <div class="tab" onclick="openTab(event, 'orders')">订单</div>
+        <div class="tab" onclick="openTab(event, 'invitationCodes')">邀请码</div>
     </div>
     <div class="container">
         <div id="users" class="tab-content active">
             <h2>用户管理</h2>
+            <div class="search-box">
+                <input type="text" id="userSearchInput" placeholder="输入用户名搜索">
+                <button onclick="searchUsers()">搜索</button>
+            </div>
             <div style="overflow-x: auto;">
                 <table id="userTable">
                     <thead>
@@ -143,6 +168,11 @@
                         <!-- 用户数据将通过 JavaScript 动态加载 -->
                     </tbody>
                 </table>
+            </div>
+            <div id="userPagination" class="pagination">
+                <button id="prevPage">上一页</button>
+                <span id="currentPage"></span>
+                <button id="nextPage">下一页</button>
             </div>
             <form id="addUserForm">
                 <h3>添加新用户</h3>
@@ -220,11 +250,15 @@
     </div>
 
     <script>
-        // 加载用户数据
-        function loadUsers() {
-            fetch('/admin/users')
+        let currentPage = 1;
+        const itemsPerPage = 20;
+
+        // 修改加载用户数据的函数
+        function loadUsers(page = 1, searchTerm = '') {
+            fetch(`/admin/users?page=${page}&limit=${itemsPerPage}&search=${encodeURIComponent(searchTerm)}`)
                 .then(response => response.json())
-                .then(users => {
+                .then(data => {
+                    const { users, totalPages } = data;
                     const tbody = document.querySelector('#userTable tbody');
                     tbody.innerHTML = '';
                     users.forEach(user => {
@@ -243,9 +277,28 @@
                             </tr>
                         `;
                     });
+
+                    // 更新分页控件
+                    document.getElementById('currentPage').textContent = `第 ${page} 页，共 ${totalPages} 页`;
+                    document.getElementById('prevPage').disabled = page <= 1;
+                    document.getElementById('nextPage').disabled = page >= totalPages;
+                    currentPage = page;
                 })
                 .catch(error => console.error('Error loading users:', error));
         }
+
+        // 添加分页事件监听器
+        document.getElementById('prevPage').addEventListener('click', () => {
+            if (currentPage > 1) {
+                const searchTerm = document.getElementById('userSearchInput').value.trim();
+                loadUsers(currentPage - 1, searchTerm);
+            }
+        });
+
+        document.getElementById('nextPage').addEventListener('click', () => {
+            const searchTerm = document.getElementById('userSearchInput').value.trim();
+            loadUsers(currentPage + 1, searchTerm);
+        });
 
         // 编辑积分
         function editPoints(userId) {
@@ -470,8 +523,9 @@
 
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', function() {
-            // 默认显示用户管理标签
+            // 默认显示用户管理标签并加载第一页
             document.querySelector('.tab').click();
+            loadUsers(1);
             // 初始化邀请码管理
             loadInvitationCodes();
         });
@@ -504,13 +558,18 @@
                         alert('新邀请码生成成功：' + data.code);
                         loadInvitationCodes();
                     } else {
-                        alert('生成邀请码失败：' + data.error);
+                        alert('生成邀请码败：' + data.error);
                     }
                 })
                 .catch(error => {
                     console.error('Error generating invitation code:', error);
                     alert('生成邀请码失败');
                 });
+        }
+
+        function searchUsers() {
+            const searchTerm = document.getElementById('userSearchInput').value.trim();
+            loadUsers(1, searchTerm);
         }
     </script>
 </body>
