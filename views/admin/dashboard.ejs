@@ -319,8 +319,6 @@
             const pointsInput = document.getElementById(`edit-points-${userId}`);
             const newPoints = pointsInput.value;
 
-            console.log(`尝试更新用户 ${userId} 的积分为 ${newPoints}`);
-
             fetch(`/admin/users/${userId}/points`, {
                 method: 'PUT',
                 headers: {
@@ -329,17 +327,13 @@
                 body: JSON.stringify({ points: newPoints }),
             })
             .then(response => {
-                console.log('服务器响应状态:', response.status);
                 return response.json();
             })
             .then(data => {
-                console.log('服务器响应数据:', data);
                 if (data.success) {
-                    console.log(`成功更新用户 ${userId} 的积分为 ${newPoints}`);
                     loadUsers();  // 重新加载用户列表
                 } else {
                     console.error('更新积分失败:', data.error);
-                    alert('更新积分失败: ' + (data.error || '未知错误'));
                 }
             })
             .catch(error => {
@@ -350,19 +344,15 @@
 
         // 修改加载内容的函数
         function loadContent() {
-            console.log('开始加载内容');
             fetch('/admin/content')
                 .then(response => {
-                    console.log('收到响应:', response);
                     return response.json();
                 })
                 .then(content => {
-                    console.log('解析后的内容:', content);
                     const tbody = document.querySelector('#contentTable tbody');
                     tbody.innerHTML = '';
                     if (Array.isArray(content) && content.length > 0) {
                         content.forEach(item => {
-                            console.log('处理项目:', item);
                             tbody.innerHTML += `
                                 <tr>
                                     <td>${item.id}</td>
@@ -381,12 +371,10 @@
                             `;
                         });
                     } else {
-                        console.log('没有内容或内容不是数组');
                         tbody.innerHTML = '<tr><td colspan="7">没有找到内容</td></tr>';
                     }
                 })
                 .catch(error => {
-                    console.error('加载内容时出错:', error);
                     const tbody = document.querySelector('#contentTable tbody');
                     tbody.innerHTML = `<tr><td colspan="7">加载内容时出错: ${error.message}</td></tr>`;
                 });
@@ -406,12 +394,10 @@
                         return response.json();
                     })
                     .then(data => {
-                        console.log('删除成功:', data.message);
                         alert('用户删除成功');
                         loadUsers();
                     })
                     .catch(error => {
-                        console.error('删除失败:', error);
                         alert('删除用户失败: ' + (error.error || '未知错误'));
                     });
             }
@@ -484,7 +470,6 @@
                         return response.json();
                     })
                     .then(data => {
-                        console.log('删除成功:', data.message);
                         alert('订单删除成功');
                         loadOrders();
                     })

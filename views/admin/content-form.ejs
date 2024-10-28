@@ -189,7 +189,6 @@
             fetch(`/admin/content/${contentId}`)
                 .then(response => response.json())
                 .then(content => {
-                    console.log('从服务器获取的内容:', content);
                     document.getElementById('simpleInfo').value = content.simpleInfo;
                     document.getElementById('location').value = content.location;
                     document.getElementById('price').value = content.price;
@@ -197,8 +196,6 @@
                     document.getElementById('detailEditor').innerHTML = content.detail;
                     document.getElementById('previewImage').src = content.preview;
                     document.getElementById('hiddenContent').value = content.hiddenContent;
-                    
-                    console.log('原始评论数据:', content.commnet);
                     let comments;
                     try {
                         comments = typeof content.commnet === 'string' ? JSON.parse(content.commnet) : content.commnet;
@@ -206,7 +203,6 @@
                         console.error('解析评论失败:', e);
                         comments = [];
                     }
-                    console.log('解析后的评论:', comments);
                     comments.forEach(comment => addCommentInput(comment));
                     
                     document.getElementById('city').value = content.city;
@@ -257,7 +253,6 @@
         }
 
         function addCommentInput(value = '') {
-            console.log('添加评论输入框，值为:', value);
             const commentList = document.getElementById('commentList');
             const commentItem = document.createElement('div');
             commentItem.className = 'commentItem';
@@ -280,18 +275,12 @@
             const comments = Array.from(document.querySelectorAll('#commentList input'))
                 .map(input => input.value)
                 .filter(comment => comment.trim() !== '');
-            console.log('提交前的评论数组:', comments);
             
             // 将评论数组转换为 JSON 字符串
             formData.set('commnet', JSON.stringify(comments));
 
             // 确保 city 字段被包含在 formData 中
             formData.set('city', document.getElementById('city').value);
-
-            console.log('FormData 内容:');
-            for (let [key, value] of formData.entries()) {
-                console.log(key, typeof value, value);
-            }
 
             const url = contentId ? `/admin/content/${contentId}` : '/admin/content';
             const method = contentId ? 'PUT' : 'POST';

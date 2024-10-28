@@ -80,63 +80,39 @@ router.post('/users', async (req, res) => {
 // 删除用户
 router.delete('/users/:id', async (req, res) => {
     const { id } = req.params;
-    console.log(`尝删除用户，ID: ${id}`);
 
     try {
         // 首先检查用户是否存在
         const user = await User.findByPk(id);
         if (!user) {
-            console.log(`未找到 ID 为 ${id} 的用户`);
             return res.status(404).json({ error: '用户不存在' });
         }
-
-        console.log(`找到用户，准备删除：`, user.toJSON());
 
         // 尝试删除用户
         const deletedCount = await User.destroy({
             where: { id: { [Op.eq]: id } }
         });
 
-        console.log(`删除操作影响的行数: ${deletedCount}`);
-
         if (deletedCount === 1) {
-            console.log(`成功删除用户，ID: ${id}`);
             res.json({ message: '用户删除成功' });
         } else {
-            console.log(`删除操作未影响任何行，可能用户已被删除，ID: ${id}`);
             res.status(404).json({ error: '用户不存在或已被删除' });
         }
     } catch (error) {
-        console.error('删除用户时发生错误:', error);
         res.status(500).json({ 
             error: '删除用户失败', 
             message: error.message,
             stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
-
-    // 删除操作后再次检查用户是否还存在
-    try {
-        const userAfterDelete = await User.findByPk(id);
-        if (userAfterDelete) {
-            console.log(`警告：删除操作后用户仍然存在，ID: ${id}`);
-        } else {
-            console.log(`确认：用户已成功从数据库中删除，ID: ${id}`);
-        }
-    } catch (error) {
-        console.error('删除后检查用户时发生错误:', error);
-    }
 });
 
 // 获取所有内容
 router.get('/content', async (req, res) => {
     try {
-        console.log('正在获取内容');
         const content = await Content.findAll();
-        console.log('获取到的内容:', JSON.stringify(content, null, 2));
         res.json(content);
     } catch (error) {
-        console.error('获取内容列表失败:', error);
         res.status(500).json({ error: '获取内容列表失败' });
     }
 });
@@ -179,8 +155,6 @@ router.post('/content', upload.single('preview'), async (req, res) => {
             hiddenContent: hiddenContent || '',
             city : city // 添加 city 字段
         });
-
-        console.log('Created content:', JSON.stringify(newContent, null, 2));
 
         res.status(201).json({ message: '内容创建成功', content: newContent });
     } catch (error) {
@@ -247,7 +221,6 @@ router.put('/content/:id', upload.single('preview'), async (req, res) => {
         }
 
         await content.update(updateData);
-        console.log('Updated content:', JSON.stringify(content, null, 2));
 
         res.json({ message: '内容更新成功', content });
     } catch (error) {
@@ -269,7 +242,6 @@ router.delete('/content/:id', async (req, res) => {
 
 // 通用的日志中间件
 router.use((req, res, next) => {
-    console.log('Admin 路由收到请求:', req.method, req.url);
     next();
 });
 
@@ -295,21 +267,14 @@ router.put('/users/:id/points', async (req, res) => {
             return res.status(400).json({ error: '无效的积分值' });
         }
 
-        console.log(`尝试更新用户 ${id} 的积分为 ${points}`);
-
         const user = await User.findByPk(id);
         if (!user) {
-            console.log(`未找到 ID 为 ${id} 的用户`);
             return res.status(404).json({ error: '未找到用户' });
         }
-
-        console.log(`找到用户:`, user.toJSON());
 
         // 更新用户积分
         user.points = parseInt(points, 10);
         await user.save();
-
-        console.log(`成功更新用户 ${id} 的积分为 ${points}`);
         res.json({ success: true, message: '积分更新成功', user: { id: user.id, username: user.username, points: user.points } });
     } catch (error) {
         console.error('更新用户积分时发生错误:', error);
@@ -393,8 +358,6 @@ router.get('/invitation-codes', async (req, res) => {
         required: false
       }]
     });
-    
-    console.log('查询结果:', JSON.stringify(codes, null, 2));
     res.json(codes);
   } catch (error) {
     console.error('获取邀请码列表失败:', error);
@@ -403,9 +366,7 @@ router.get('/invitation-codes', async (req, res) => {
 });
 
 router.get('/statistics', async (req, res) => {
-    console.log('访问统计页面路由');
     try {
-        console.log('开始获取统计数据');
         // 获取总体统计
         const stats = await UserAction.findAll({
             attributes: [
@@ -414,7 +375,6 @@ router.get('/statistics', async (req, res) => {
             ],
             group: ['action']
         });
-        console.log('总体统计数据:', JSON.stringify(stats, null, 2));
 
         // 获取每个用户的行为统计
         const userStats = await UserAction.findAll({
@@ -429,12 +389,8 @@ router.get('/statistics', async (req, res) => {
             }],
             group: ['userId', 'action', 'User.id', 'User.username']
         });
-        console.log('用户统计数据:', JSON.stringify(userStats, null, 2));
-
-        console.log('准备渲染统计页面');
         res.render('admin/statistics', { stats, userStats });
     } catch (error) {
-        console.error('获取统计数据时出错:', error);
         res.status(500).send('获取统计数据失败: ' + error.message);
     }
 });

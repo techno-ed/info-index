@@ -592,14 +592,12 @@
                 }
                 
                 const data = await response.json();
-                console.log('Action logged:', action, data);
             } catch (error) {
                 console.error('Error logging action:', error);
             }
         }
 
         function openDetail(card) {
-            console.log('打开详情的卡片数据:', card);
 
             const detailPage = document.getElementById('detail-page');
             const overlay = document.getElementById('overlay');
@@ -619,8 +617,6 @@
                     ${Array.isArray(card.commnet) ? card.commnet.map(comment => `<div class="comment">${comment}</div>`).join('') : '暂无评论'}
                 </div>
             `;
-
-            console.log('生成的详情 HTML:', detailHtml);
 
             if (card.hasPurchased) {
                 detailHtml += `
