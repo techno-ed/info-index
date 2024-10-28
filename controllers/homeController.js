@@ -51,7 +51,6 @@ exports.getHomePage = async (req, res, next) => {
     const formattedContent = {
       code: 200,
       data: await Promise.all(content.map(async (item) => {
-
         let commnet = [];
         if (typeof item.commnet === 'string') {
           try {
@@ -82,7 +81,8 @@ exports.getHomePage = async (req, res, next) => {
           detail: item.detail,
           commnet: commnet,
           hasPurchased: !!hasPurchased,
-          hiddenContent: hasPurchased ? item.hiddenContent : null
+          hiddenContent: hasPurchased ? item.hiddenContent : null,
+          category: item.category
         };
       }))
     };

@@ -42,6 +42,10 @@ const Content = sequelize.define('Content', {
   commnet: {
     type: DataTypes.JSON,
     allowNull: true
+  },
+  category: {
+    type: DataTypes.STRING,
+    allowNull: false
   }
 });
 

@@ -389,6 +389,69 @@
                 margin-bottom: 5px;
             }
         }
+
+        .category-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab-button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            background-color: #f0f0f0;
+            cursor: pointer;
+            border-radius: 20px;
+            transition: background-color 0.3s;
+        }
+        .tab-button.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .category-group {
+            margin-bottom: 30px;
+        }
+
+        .category-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+
+        .category-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .category-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .category-title {
+                cursor: pointer;
+            }
+
+            .category-title::after {
+                content: '▼';
+                float: right;
+                transition: transform 0.3s;
+            }
+
+            .category-title.collapsed::after {
+                transform: rotate(-90deg);
+            }
+
+            .category-cards.collapsed {
+                display: none;
+            }
+        }
     </style>
 </head>
 
@@ -427,7 +490,9 @@
                     </div>
                 </div>
             </div>
-            <div class="card-list" id="card-container"></div>
+            <div class="category-content-container" id="category-content-container">
+                <!-- 分类内容将在这里动态生成 -->
+            </div>
         </div>
     </div>
     
@@ -481,6 +546,7 @@
         let isDetailOpen = false;
         let selectedArea = '';
         let selectedCity = '';
+        let currentCategory = 'all';
 
         function populateFilters() {
             populateAreaFilter();
@@ -530,29 +596,70 @@
         }
 
         function renderCards(cards) {
-            const container = document.getElementById('card-container');
+            const container = document.getElementById('category-content-container');
             container.innerHTML = '';
-            cards.forEach(card => {
-                const cardElement = document.createElement('div');
-                cardElement.className = 'card';
-                cardElement.innerHTML = `
-                    ${card.hasPurchased ? '<div class="purchased-badge">已购买</div>' : ''}
-                    <div class="card-cover-container">
-                        <img src="${card.preview}" alt="卡片${card.id}封面" class="card-cover">
-                    </div>
-                    <div class="card-content">
-                        <div class="card-number">编号：${card.id}</div>
-                        <div class="card-description">${card.simpleInfo}</div>
-                        <div class="card-price">￥${card.price.toFixed(2)}</div>
-                        <div class="card-area">地区：${card.location}</div>
-                    </div>
-                `;
-                cardElement.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    openDetail(card);
+
+            // 按 category 分组
+            const groupedCards = cards.reduce((groups, card) => {
+                const category = card.category || '未分类';
+                if (!groups[category]) {
+                    groups[category] = [];
+                }
+                groups[category].push(card);
+                return groups;
+            }, {});
+
+            // 渲染每个分组
+            Object.entries(groupedCards).forEach(([category, categoryCards]) => {
+                const groupElement = document.createElement('div');
+                groupElement.className = 'category-group';
+
+                const titleElement = document.createElement('h2');
+                titleElement.className = 'category-title';
+                titleElement.textContent = category;
+
+                const cardsContainer = document.createElement('div');
+                cardsContainer.className = 'category-cards';
+
+                categoryCards.forEach(card => {
+                    const cardElement = createCardElement(card);
+                    cardsContainer.appendChild(cardElement);
                 });
-                container.appendChild(cardElement);
+
+                groupElement.appendChild(titleElement);
+                groupElement.appendChild(cardsContainer);
+                container.appendChild(groupElement);
+
+                // 为移动端添加折叠功能
+                if (window.innerWidth <= 768) {
+                    titleElement.addEventListener('click', () => {
+                        titleElement.classList.toggle('collapsed');
+                        cardsContainer.classList.toggle('collapsed');
+                    });
+                }
             });
+        }
+
+        function createCardElement(card) {
+            const cardElement = document.createElement('div');
+            cardElement.className = 'card';
+            cardElement.innerHTML = `
+                ${card.hasPurchased ? '<div class="purchased-badge">已购买</div>' : ''}
+                <div class="card-cover-container">
+                    <img src="${card.preview}" alt="卡片${card.id}封面" class="card-cover">
+                </div>
+                <div class="card-content">
+                    <div class="card-number">编号：${card.id}</div>
+                    <div class="card-description">${card.simpleInfo}</div>
+                    <div class="card-price">￥${card.price.toFixed(2)}</div>
+                    <div class="card-area">地区：${card.location}</div>
+                </div>
+            `;
+            cardElement.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openDetail(card);
+            });
+            return cardElement;
         }
 
         function filterAndSortCards() {

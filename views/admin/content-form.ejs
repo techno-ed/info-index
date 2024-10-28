@@ -137,17 +137,21 @@
             </div>
             <div class="separator"></div>
             <div style="display: flex; justify-content: space-between;">
-                <div style="width: 32%;">
+                <div style="width: 24%;">
                     <label for="city">城市:</label>
                     <input type="text" id="city" name="city" required>
                 </div>
-                <div style="width: 32%;">
+                <div style="width: 24%;">
                     <label for="area">区域:</label>
                     <input type="text" id="area" name="area" required>
                 </div>
-                <div style="width: 32%;">
+                <div style="width: 24%;">
                     <label for="location">位置:</label>
                     <input type="text" id="location" name="location" required>
+                </div>
+                <div style="width: 24%;">
+                    <label for="category">分类:</label>
+                    <input type="text" id="category" name="category" required>
                 </div>
             </div>
             <div class="separator"></div>
@@ -197,6 +201,8 @@
                     document.getElementById('detailEditor').innerHTML = content.detail;
                     document.getElementById('previewImage').src = content.preview;
                     document.getElementById('hiddenContent').value = content.hiddenContent;
+                    document.getElementById('city').value = content.city;
+                    document.getElementById('category').value = content.category; // 添加这行
                     
                     console.log('原始评论数据:', content.commnet);
                     let comments;
@@ -285,8 +291,9 @@
             // 将评论数组转换为 JSON 字符串
             formData.set('commnet', JSON.stringify(comments));
 
-            // 确保 city 字段被包含在 formData 中
+            // 确保 city 和 category 字段被包含在 formData 中
             formData.set('city', document.getElementById('city').value);
+            formData.set('category', document.getElementById('category').value);
 
             console.log('FormData 内容:');
             for (let [key, value] of formData.entries()) {
@@ -321,7 +328,7 @@
             });
         };
 
-        // 添加清除表单的函数
+        // 修改清除表单的函数
         function clearForm() {
             document.getElementById('simpleInfo').value = '';
             document.getElementById('preview').value = '';
@@ -330,6 +337,8 @@
             document.getElementById('area').value = '';
             document.getElementById('detailEditor').innerHTML = '';
             document.getElementById('commentList').innerHTML = '';
+            document.getElementById('city').value = '';
+            document.getElementById('category').value = ''; // 添加这行
             if (document.getElementById('previewImage')) {
                 document.getElementById('previewImage').src = '';
             }

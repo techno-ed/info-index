@@ -155,7 +155,7 @@ const upload = multer({ storage: imageStorage });
 // 添加新内容
 router.post('/content', upload.single('preview'), async (req, res) => {
     try {
-        const { simpleInfo, location, price, area, detail, commnet, hiddenContent, city } = req.body;
+        const { simpleInfo, location, price, area, detail, commnet, hiddenContent, city, category } = req.body;
         const preview = req.file ? `/uploads/${req.file.filename}` : null;
 
         let parsedCommnet;
@@ -175,7 +175,8 @@ router.post('/content', upload.single('preview'), async (req, res) => {
             detail: detail || '',
             commnet: parsedCommnet,
             hiddenContent: hiddenContent || '',
-            city : city // 添加 city 字段
+            city,
+            category // 添加 category 字段
         });
 
         console.log('Created content:', JSON.stringify(newContent, null, 2));
@@ -220,7 +221,7 @@ router.put('/content/:id', upload.single('preview'), async (req, res) => {
             return res.status(404).json({ error: '内容不存在' });
         }
 
-        const { simpleInfo, location, price, area, detail, commnet, hiddenContent, city } = req.body;
+        const { simpleInfo, location, price, area, detail, commnet, hiddenContent, city, category } = req.body;
 
         const updateData = { 
             simpleInfo, 
@@ -230,7 +231,8 @@ router.put('/content/:id', upload.single('preview'), async (req, res) => {
             detail: detail || '',
             commnet: commnet,
             hiddenContent: hiddenContent || '',
-            city // 添加 city 字段
+            city,
+            category // 添加 category 字段
         };
 
         if (req.file) {
