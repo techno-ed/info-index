@@ -9,6 +9,8 @@ const path = require('path');
 const fs = require('fs');
 const { Op } = require('sequelize');
 const Order = require('../models/Order'); // 确保您有一个 Order 模型
+const UserAction = require('../models/UserAction');
+const sequelize = require('sequelize');
 
 // 将 isAdmin 中间件应用到所有管理员路由
 router.use(isAdmin);
@@ -398,6 +400,43 @@ router.get('/invitation-codes', async (req, res) => {
     console.error('获取邀请码列表失败:', error);
     res.status(500).json({ error: '获取邀请码列表失败', details: error.message });
   }
+});
+
+router.get('/statistics', async (req, res) => {
+    console.log('访问统计页面路由');
+    try {
+        console.log('开始获取统计数据');
+        // 获取总体统计
+        const stats = await UserAction.findAll({
+            attributes: [
+                'action',
+                [sequelize.fn('COUNT', sequelize.col('UserAction.id')), 'count']
+            ],
+            group: ['action']
+        });
+        console.log('总体统计数据:', JSON.stringify(stats, null, 2));
+
+        // 获取每个用户的行为统计
+        const userStats = await UserAction.findAll({
+            attributes: [
+                'userId',
+                'action',
+                [sequelize.fn('COUNT', sequelize.col('UserAction.id')), 'count']
+            ],
+            include: [{
+                model: User,
+                attributes: ['username']
+            }],
+            group: ['userId', 'action', 'User.id', 'User.username']
+        });
+        console.log('用户统计数据:', JSON.stringify(userStats, null, 2));
+
+        console.log('准备渲染统计页面');
+        res.render('admin/statistics', { stats, userStats });
+    } catch (error) {
+        console.error('获取统计数据时出错:', error);
+        res.status(500).send('获取统计数据失败: ' + error.message);
+    }
 });
 
 module.exports = router;

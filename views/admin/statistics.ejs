@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>用户行为统计</title>
+    <style>
+        .stats-container {
+            margin: 20px;
+        }
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .stats-table th, .stats-table td {
+            padding: 8px;
+            border: 1px solid #ddd;
+        }
+        .stats-table th {
+            background-color: #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+    <div class="stats-container">
+        <h2>总体统计</h2>
+        <table class="stats-table">
+            <tr>
+                <th>行为</th>
+                <th>次数</th>
+            </tr>
+            <% stats.forEach(stat => { %>
+                <tr>
+                    <td><%= stat.action %></td>
+                    <td><%= stat.get('count') %></td>
+                </tr>
+            <% }); %>
+        </table>
+
+        <h2>用户行为统计</h2>
+        <table class="stats-table">
+            <tr>
+                <th>用户名</th>
+                <th>行为</th>
+                <th>次数</th>
+            </tr>
+            <% userStats.forEach(stat => { %>
+                <tr>
+                    <td><%= stat.User ? stat.User.username : '未登录用户' %></td>
+                    <td><%= stat.action %></td>
+                    <td><%= stat.get('count') %></td>
+                </tr>
+            <% }); %>
+        </table>
+    </div>
+</body>
+</html>

@@ -4,6 +4,7 @@ const path = require('path');
 const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
   host: process.env.DB_HOST,
   dialect: 'mysql',
+  logging: false, // 禁用日志显示
   // 其他 MySQL 特定配置
 });
 

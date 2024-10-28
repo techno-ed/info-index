@@ -40,12 +40,13 @@ app.set('views', path.join(__dirname, 'views'));
 const homeRoutes = require('./routes/homeRoutes');
 const userRoutes = require('./routes/userRoutes');
 const adminRoutes = require('./routes/admin');
+const apiRoutes = require('./routes/api');  // 添加这行
 
 // 使用路由
 app.use('/', homeRoutes);
-app.use('/api/users', userRoutes);
-app.use('/', userRoutes);  // 注意这里的变化
+app.use('/', userRoutes);
 app.use('/admin', adminRoutes);
+app.use('/api', apiRoutes);  // 添加这行
 
 const PORT = process.env.PORT || 3000;
 

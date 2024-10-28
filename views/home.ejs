@@ -449,7 +449,7 @@
         </div>
     </div>
 
-    <!-- 添加模态框 -->
+    <!-- 添模态框 -->
     <div id="area-modal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
@@ -574,6 +574,30 @@
             renderCards(filteredCards);
         }
 
+        async function logAction(action, contentId = null) {
+            try {
+                const response = await fetch('/api/log-action', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action,
+                        contentId
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to log action');
+                }
+                
+                const data = await response.json();
+                console.log('Action logged:', action, data);
+            } catch (error) {
+                console.error('Error logging action:', error);
+            }
+        }
+
         function openDetail(card) {
             console.log('打开详情的卡片数据:', card);
 
@@ -629,6 +653,8 @@
             if (window._hmt) {
                 _hmt.push(['_trackPageview', '/detail/' + card.id]);
             }
+
+            logAction('view_detail', card.id);
         }
 
         function confirmPurchase(contentId) {
@@ -637,42 +663,48 @@
             }
         }
 
-        function purchaseContent(contentId) {
-            fetch(`/content/${contentId}/purchase`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('detail-content').innerHTML = `
-                        <h3>隐藏内容</h3>
-                        ${data.hiddenContent}
-                    `;
-                    // 更新用户积分显示
-                    if (document.getElementById('userPointsDisplay')) {
-                        document.getElementById('userPointsDisplay').textContent = data.remainingPoints;
+        async function purchaseContent(contentId) {
+            try {
+                fetch(`/content/${contentId}/purchase`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
                     }
-                    
-                    var username = '<%= user ? user.username : "未登录用户" %>';
-                    // 百度统计打点
-                    if (window._hmt) {
-                        _hmt.push(['_trackEvent', '购买', '使用积分购买', `用户ID:${username},内容ID:${contentId}`]);
-                    }
-                } else {
-                    if (data.error === '积分不足') {
-                        alert('积分不足，请联系客服充值');
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('detail-content').innerHTML = `
+                            <h3>隐藏内容</h3>
+                            ${data.hiddenContent}
+                        `;
+                        // 更新用户积分显示
+                        if (document.getElementById('userPointsDisplay')) {
+                            document.getElementById('userPointsDisplay').textContent = data.remainingPoints;
+                        }
+                        
+                        var username = '<%= user ? user.username : "未登录用户" %>';
+                        // 百度统计打点
+                        if (window._hmt) {
+                            _hmt.push(['_trackEvent', '购买', '使用积分购买', `用户ID:${username},内容ID:${contentId}`]);
+                        }
                     } else {
-                        alert(data.error);
+                        if (data.error === '积分不足') {
+                            alert('积分不足，请联系客服充值');
+                        } else {
+                            alert(data.error);
+                        }
                     }
-                }
-            })
-            .catch(error => {
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('购买失败，请稍后再试');
+                });
+
+                await logAction('purchase', contentId);
+            } catch (error) {
                 console.error('Error:', error);
-                alert('购买失败，请稍后再试');
-            });
+            }
         }
 
         function closeDetail() {
@@ -691,6 +723,7 @@
             sortAscending = !sortAscending;
             document.getElementById('sort-button').textContent = sortAscending ? '编号：正序' : '编号：倒序';
             filterAndSortCards();
+            logAction('sort_content', null);
         }
 
         // 添加新的函数来显示和关闭用户积分模态框
@@ -798,6 +831,8 @@
                 _hmt.push(['_trackEvent', '用户', '访问主页', username]);
                 window._hmt.push(['_setUserId', username]);
             }
+
+            logAction('view_home');
         });
     </script>
 
