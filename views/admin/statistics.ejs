@@ -9,46 +9,77 @@
         .stats-table {
             width: 100%;
             border-collapse: collapse;
+            margin-bottom: 30px;
         }
         .stats-table th, .stats-table td {
             padding: 8px;
             border: 1px solid #ddd;
+            text-align: center;
         }
         .stats-table th {
             background-color: #f5f5f5;
+        }
+        .date-header {
+            background-color: #e9ecef;
+            font-weight: bold;
+        }
+        .filter-section {
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
     <div class="stats-container">
+        <div class="filter-section">
+            <h3>统计时间范围：<%= startDate.toLocaleDateString() %> 至 <%= endDate.toLocaleDateString() %></h3>
+        </div>
+
         <h2>总体统计</h2>
         <table class="stats-table">
             <tr>
+                <th>日期</th>
                 <th>行为</th>
                 <th>次数</th>
             </tr>
-            <% stats.forEach(stat => { %>
-                <tr>
+            <% 
+            let currentDate = '';
+            stats.forEach(stat => { 
+                const date = new Date(stat.get('date')).toLocaleDateString();
+            %>
+                <tr <%= currentDate !== date ? 'class="date-header"' : '' %>>
+                    <td><%= currentDate !== date ? date : '' %></td>
                     <td><%= stat.action %></td>
                     <td><%= stat.get('count') %></td>
                 </tr>
-            <% }); %>
+            <% 
+                currentDate = date;
+            }); 
+            %>
         </table>
 
         <h2>用户行为统计</h2>
         <table class="stats-table">
             <tr>
+                <th>日期</th>
                 <th>用户名</th>
                 <th>行为</th>
                 <th>次数</th>
             </tr>
-            <% userStats.forEach(stat => { %>
-                <tr>
+            <% 
+            currentDate = '';
+            userStats.forEach(stat => { 
+                const date = new Date(stat.get('date')).toLocaleDateString();
+            %>
+                <tr <%= currentDate !== date ? 'class="date-header"' : '' %>>
+                    <td><%= currentDate !== date ? date : '' %></td>
                     <td><%= stat.User ? stat.User.username : '未登录用户' %></td>
                     <td><%= stat.action %></td>
                     <td><%= stat.get('count') %></td>
                 </tr>
-            <% }); %>
+            <% 
+                currentDate = date;
+            }); 
+            %>
         </table>
     </div>
 </body>

@@ -367,18 +367,35 @@ router.get('/invitation-codes', async (req, res) => {
 
 router.get('/statistics', async (req, res) => {
     try {
-        // 获取总体统计
-        const stats = await UserAction.findAll({
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 7);
+
+        // 按天统计总体行为
+        const stats = await UserAction.findAll({ 
             attributes: [
+                [sequelize.fn('DATE', sequelize.col('UserAction.createdAt')), 'date'],
                 'action',
                 [sequelize.fn('COUNT', sequelize.col('UserAction.id')), 'count']
             ],
-            group: ['action']
+            where: {
+                createdAt: {
+                    [Op.between]: [startDate, endDate]
+                }
+            },
+            group: [
+                sequelize.fn('DATE', sequelize.col('UserAction.createdAt')),
+                'action'
+            ],
+            order: [
+                [sequelize.fn('DATE', sequelize.col('UserAction.createdAt')), 'DESC']
+            ]
         });
 
-        // 获取每个用户的行为统计
+        // 按天统计用户行为
         const userStats = await UserAction.findAll({
             attributes: [
+                [sequelize.fn('DATE', sequelize.col('UserAction.createdAt')), 'date'],
                 'userId',
                 'action',
                 [sequelize.fn('COUNT', sequelize.col('UserAction.id')), 'count']
@@ -387,10 +404,32 @@ router.get('/statistics', async (req, res) => {
                 model: User,
                 attributes: ['username']
             }],
-            group: ['userId', 'action', 'User.id', 'User.username']
+            where: {
+                createdAt: {
+                    [Op.between]: [startDate, endDate]
+                }
+            },
+            group: [
+                sequelize.fn('DATE', sequelize.col('UserAction.createdAt')),
+                'userId',
+                'action',
+                'User.id',
+                'User.username'
+            ],
+            order: [
+                [sequelize.fn('DATE', sequelize.col('UserAction.createdAt')), 'DESC'],
+                ['userId']
+            ]
         });
-        res.render('admin/statistics', { stats, userStats });
+
+        res.render('admin/statistics', { 
+            stats, 
+            userStats,
+            startDate,
+            endDate
+        });
     } catch (error) {
+        console.error('获取统计数据失败:', error);
         res.status(500).send('获取统计数据失败: ' + error.message);
     }
 });
