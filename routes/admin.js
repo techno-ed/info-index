@@ -370,12 +370,14 @@ router.get('/statistics', async (req, res) => {
         const endDate = new Date();
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - 7);
-
-        // 按天统计总体行为
-        const stats = await UserAction.findAll({ 
+        
+        // 获取选择的日期（默认今天）
+        const selectedDate = req.query.date ? new Date(req.query.date) : new Date();
+        
+        // 获取7天的趋势数据
+        const trendStats = await UserAction.findAll({
             attributes: [
                 [sequelize.fn('DATE', sequelize.col('UserAction.createdAt')), 'date'],
-                'action',
                 [sequelize.fn('COUNT', sequelize.col('UserAction.id')), 'count']
             ],
             where: {
@@ -383,19 +385,30 @@ router.get('/statistics', async (req, res) => {
                     [Op.between]: [startDate, endDate]
                 }
             },
-            group: [
-                sequelize.fn('DATE', sequelize.col('UserAction.createdAt')),
-                'action'
-            ],
-            order: [
-                [sequelize.fn('DATE', sequelize.col('UserAction.createdAt')), 'DESC']
-            ]
+            group: [sequelize.fn('DATE', sequelize.col('UserAction.createdAt'))],
+            order: [[sequelize.fn('DATE', sequelize.col('UserAction.createdAt')), 'ASC']]
         });
 
-        // 按天统计用户行为
+        // 获取选定日期的指标数据
+        const dailyStats = await UserAction.findAll({
+            attributes: [
+                'action',
+                [sequelize.fn('COUNT', sequelize.col('UserAction.id')), 'count']
+            ],
+            where: {
+                createdAt: {
+                    [Op.between]: [
+                        new Date(selectedDate.setHours(0,0,0,0)),
+                        new Date(selectedDate.setHours(23,59,59,999))
+                    ]
+                }
+            },
+            group: ['action']
+        });
+
+        // 获取选定日期的用户行为数据
         const userStats = await UserAction.findAll({
             attributes: [
-                [sequelize.fn('DATE', sequelize.col('UserAction.createdAt')), 'date'],
                 'userId',
                 'action',
                 [sequelize.fn('COUNT', sequelize.col('UserAction.id')), 'count']
@@ -406,27 +419,22 @@ router.get('/statistics', async (req, res) => {
             }],
             where: {
                 createdAt: {
-                    [Op.between]: [startDate, endDate]
+                    [Op.between]: [
+                        new Date(selectedDate.setHours(0,0,0,0)),
+                        new Date(selectedDate.setHours(23,59,59,999))
+                    ]
                 }
             },
-            group: [
-                sequelize.fn('DATE', sequelize.col('UserAction.createdAt')),
-                'userId',
-                'action',
-                'User.id',
-                'User.username'
-            ],
-            order: [
-                [sequelize.fn('DATE', sequelize.col('UserAction.createdAt')), 'DESC'],
-                ['userId']
-            ]
+            group: ['userId', 'action', 'User.id', 'User.username'],
+            order: [[sequelize.col('count'), 'DESC']]
         });
 
         res.render('admin/statistics', { 
-            stats, 
+            trendStats,
+            dailyStats,
             userStats,
-            startDate,
-            endDate
+            selectedDate,
+            sortBy: req.query.sortBy || 'view_home'
         });
     } catch (error) {
         console.error('获取统计数据失败:', error);
