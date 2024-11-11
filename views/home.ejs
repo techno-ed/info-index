@@ -389,6 +389,24 @@
                 margin-bottom: 5px;
             }
         }
+
+        .edit-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: #3498db;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            z-index: 1;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .edit-badge:hover {
+            background-color: #2980b9;
+        }
     </style>
 </head>
 
@@ -539,12 +557,15 @@
                     ${card.hasPurchased ? '<div class="purchased-badge">已购买</div>' : ''}
                     <div class="card-cover-container">
                         <img src="${card.preview}" alt="卡片${card.id}封面" class="card-cover">
+                        <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
+                            <a href="/admin/content/edit/${card.id}" class="edit-badge" onclick="event.stopPropagation()">编辑</a>
+                        <% } %>
                     </div>
                     <div class="card-content">
                         <div class="card-number">编号：${card.id}</div>
                         <div class="card-description">${card.simpleInfo}</div>
                         <div class="card-price">￥${card.price.toFixed(2)}</div>
-                        <div class="card-area">地区：${card.location}</div>
+                        <div class="card-area">地区：${card.city} - ${card.location}</div>
                     </div>
                 `;
                 cardElement.addEventListener('click', (e) => {
@@ -600,15 +621,15 @@
         function openDetail(card) {
 
             const detailPage = document.getElementById('detail-page');
-            const overlay = document.getElementById('overlay');
+            const overlay = document.getElementById('overlay'); 
             const detailContent = document.getElementById('detail-content');
             
             let detailHtml = `
-                <h2>编号${card.id}</h2>
+                <h2>编号：${card.id}</h2>
                 <img src="${card.preview}" alt="预览图" style="width: 100%; height: auto; object-fit: cover; margin-bottom: 15px;">
                 <p><strong>简介：</strong> ${card.simpleInfo}</p>
                 <p><strong>价格：</strong> ￥${card.price.toFixed(2)}</p>
-                <p><strong>地区：</strong> ${card.location}</p>
+                <p><strong>地区：</strong> ${card.city} - ${card.location}</p>
                 <p><strong>详情：</strong></p>
                 <div>${card.detail}</div>
 
