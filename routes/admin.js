@@ -429,7 +429,7 @@ router.get('/statistics', async (req, res) => {
             order: [[sequelize.col('count'), 'DESC']]
         });
 
-        res.render('admin/statistics', { 
+        res.json({ 
             trendStats,
             dailyStats,
             userStats,
@@ -438,7 +438,7 @@ router.get('/statistics', async (req, res) => {
         });
     } catch (error) {
         console.error('获取统计数据失败:', error);
-        res.status(500).send('获取统计数据失败: ' + error.message);
+        res.status(500).json({ error: '获取统计数据失败: ' + error.message });
     }
 });
 
