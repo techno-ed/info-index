@@ -136,118 +136,399 @@
         .search-box button:hover {
             background-color: #45a049;
         }
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 200px;
+            background-color: #2c3e50;
+            padding: 20px 0;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+
+        .tabs {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 0;
+        }
+
+        .tab {
+            padding: 15px 20px;
+            cursor: pointer;
+            border: none;
+            background-color: transparent;
+            color: #ecf0f1;
+            text-align: left;
+            transition: background-color 0.3s;
+            border-left: 4px solid transparent;
+        }
+
+        .tab:hover {
+            background-color: #34495e;
+        }
+
+        .tab.active {
+            background-color: #34495e;
+            border-left: 4px solid #3498db;
+            color: #3498db;
+        }
+
+        .logo-area {
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            border-bottom: 1px solid #34495e;
+        }
+
+        .logo-area h1 {
+            margin: 0;
+            font-size: 1.5em;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                padding: 10px 0;
+            }
+
+            .tabs {
+                flex-direction: row;
+                overflow-x: auto;
+            }
+
+            .tab {
+                padding: 10px 15px;
+                border-left: none;
+                border-bottom: 4px solid transparent;
+            }
+
+            .tab.active {
+                border-left: none;
+                border-bottom: 4px solid #3498db;
+            }
+        }
+
+        /* 更新和新增以下样式 */
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+            }
+
+            .dashboard-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                padding: 10px 0;
+                position: fixed;
+                top: 0;
+                z-index: 1000;
+            }
+
+            .logo-area {
+                padding: 10px;
+                margin-bottom: 0;
+            }
+
+            .logo-area h1 {
+                font-size: 1.2em;
+            }
+
+            .tabs {
+                flex-direction: row;
+                overflow-x: auto;
+                white-space: nowrap;
+                -webkit-overflow-scrolling: touch;
+                padding: 0 10px;
+            }
+
+            .tab {
+                padding: 10px 15px;
+                border-left: none;
+                border-bottom: 3px solid transparent;
+                font-size: 14px;
+            }
+
+            .tab.active {
+                border-left: none;
+                border-bottom: 3px solid #3498db;
+            }
+
+            .main-content {
+                margin-top: 100px; /* 为固定定位的侧边栏留出空间 */
+                padding: 10px;
+            }
+
+            /* 表格响应式处理 */
+            table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+
+            th, td {
+                padding: 8px;
+                font-size: 14px;
+            }
+
+            /* 搜索框响应式处理 */
+            .search-box {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 15px;
+            }
+
+            .search-box input[type="text"] {
+                flex: 1;
+                width: auto;
+            }
+
+            /* 表单响应式处理 */
+            form {
+                padding: 10px;
+            }
+
+            input[type="text"], 
+            input[type="email"], 
+            input[type="number"], 
+            input[type="password"], 
+            select {
+                font-size: 16px; /* 防止 iOS 自动缩放 */
+            }
+
+            /* 按钮响应式处理 */
+            button {
+                padding: 8px 12px;
+                font-size: 14px;
+                white-space: nowrap;
+            }
+
+            /* 分页控件响应式处理 */
+            .pagination {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 10px;
+                margin: 15px 0;
+            }
+
+            #currentPage {
+                font-size: 14px;
+            }
+
+            /* 内容管理表格的特殊处理 */
+            #contentTable td {
+                max-width: 200px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: normal;
+            }
+
+            #contentTable img {
+                max-width: 60px;
+                max-height: 60px;
+            }
+
+            /* 操作按钮的响应式处理 */
+            td button {
+                margin: 2px;
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+
+            /* 添加用户表单的响应式处理 */
+            #addUserForm {
+                margin-top: 15px;
+                padding: 15px;
+                background: white;
+                border-radius: 5px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+
+            #addUserForm h3 {
+                margin-top: 0;
+                font-size: 16px;
+            }
+
+            /* 标题响应式处理 */
+            h2 {
+                font-size: 1.5em;
+                margin: 10px 0;
+            }
+        }
+
+        /* 针对特小屏幕的额外优化 */
+        @media (max-width: 480px) {
+            .tab {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+
+            .logo-area h1 {
+                font-size: 1em;
+            }
+
+            td, th {
+                padding: 6px;
+                font-size: 12px;
+            }
+
+            .main-content {
+                margin-top: 90px;
+            }
+
+            /* 简化表格内容显示 */
+            #contentTable td:nth-child(2), /* 简介列 */
+            #contentTable td:nth-child(4), /* 位置列 */
+            #contentTable td:nth-child(6) { /* 区域列 */
+                max-width: 100px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
+
+        /* 添加滚动条美化 */
+        .tabs::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .tabs::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .tabs::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 2px;
+        }
+
+        .tabs::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
     </style>
 </head>
 <body>
-    <h1>管理员仪表板</h1>
-    <div class="tabs">
-        <div class="tab active" onclick="openTab(event, 'users')">用户</div>
-        <div class="tab" onclick="openTab(event, 'content')">内容</div>
-        <div class="tab" onclick="openTab(event, 'orders')">订单</div>
-        <div class="tab" onclick="openTab(event, 'invitationCodes')">邀请码</div>
-    </div>
-    <div class="container">
-        <div id="users" class="tab-content active">
-            <h2>用户管理</h2>
-            <div class="search-box">
-                <input type="text" id="userSearchInput" placeholder="输入用户名搜索">
-                <button onclick="searchUsers()">搜索</button>
+    <div class="dashboard-container">
+        <div class="sidebar">
+            <div class="logo-area">
+                <h1>管理后台</h1>
             </div>
-            <div style="overflow-x: auto;">
-                <table id="userTable">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>用户名</th>
-                            <th>角色</th>
-                            <th>积分</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- 用户数据将通过 JavaScript 动态加载 -->
-                    </tbody>
-                </table>
-            </div>
-            <div id="userPagination" class="pagination">
-                <button id="prevPage">上一页</button>
-                <span id="currentPage"></span>
-                <button id="nextPage">下一页</button>
-            </div>
-            <form id="addUserForm">
-                <h3>添加新用户</h3>
-                <input type="text" id="username" placeholder="用户名" required>
-                <select id="role" required>
-                    <option value="">选择角色</option>
-                    <option value="user">普通用户</option>
-                    <option value="admin">管理员</option>
-                </select>
-                <input type="password" id="password" placeholder="密码" required>
-                <input type="submit" value="添加用户">
-            </form>
-        </div>
-        <div id="content" class="tab-content">
-            <h2>内容管理</h2>
-            <button onclick="location.href='/admin/content/add'">添加新内容</button>
-            <div style="overflow-x: auto;">
-                <table id="contentTable">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>简介</th>
-                            <th>预览</th>
-                            <th>位置</th>
-                            <th>价格</th>
-                            <th>区域</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- 内容数据将通过 JavaScript 动态加载 -->
-                    </tbody>
-                </table>
+            <div class="tabs">
+                <div class="tab active" onclick="openTab(event, 'users')">
+                    <i class="fas fa-users"></i> 用户管理
+                </div>
+                <div class="tab" onclick="openTab(event, 'content')">
+                    <i class="fas fa-file-alt"></i> 内容管理
+                </div>
+                <div class="tab" onclick="openTab(event, 'orders')">
+                    <i class="fas fa-shopping-cart"></i> 订单管理
+                </div>
             </div>
         </div>
-        <div id="orders" class="tab-content">
-            <h2>订单管理</h2>
-            <div style="overflow-x: auto;">
-                <table id="orderTable">
-                    <thead>
-                        <tr>
-                            <th>订单ID</th>
-                            <th>用户</th>
-                            <th>内容ID</th>
-                            <th>内容简介</th>
-                            <th>创建时间</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- 订单数据将通过 JavaScript 动态加载 -->
-                    </tbody>
-                </table>
+
+        <div class="main-content">
+            <div id="users" class="tab-content active">
+                <h2>用户管理</h2>
+                <div class="search-box">
+                    <input type="text" id="userSearchInput" placeholder="输入用户名搜索">
+                    <button onclick="searchUsers()">搜索</button>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table id="userTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>用户名</th>
+                                <th>角色</th>
+                                <th>积分</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- 用户数据将通过 JavaScript 动态加载 -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="userPagination" class="pagination">
+                    <button id="prevPage">上一页</button>
+                    <span id="currentPage"></span>
+                    <button id="nextPage">下一页</button>
+                </div>
+                <form id="addUserForm">
+                    <h3>添加新用户</h3>
+                    <input type="text" id="username" placeholder="用户名" required>
+                    <select id="role" required>
+                        <option value="">选择角色</option>
+                        <option value="user">普通用户</option>
+                        <option value="admin">管理员</option>
+                    </select>
+                    <input type="password" id="password" placeholder="密码" required>
+                    <input type="submit" value="添加用户">
+                </form>
             </div>
-        </div>
-        <div id="invitationCodes" class="tab-content">
-            <h2>邀请码管理</h2>
-            <button onclick="generateInvitationCode()">生成新邀请码</button>
-            <div style="overflow-x: auto;">
-                <table id="invitationCodeTable">
-                    <thead>
-                        <tr>
-                            <th>邀请码</th>
-                            <th>状态</th>
-                            <th>使用者</th>
-                            <th>创建时间</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- 邀请码数据将通过 JavaScript 动态加载 -->
-                                        </tbody>
-                </table>
+
+            <div id="content" class="tab-content">
+                <h2>内容管理</h2>
+                <button onclick="location.href='/admin/content/add'">添加新内容</button>
+                <div style="overflow-x: auto;">
+                    <table id="contentTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>简介</th>
+                                <th>预览</th>
+                                <th>位置</th>
+                                <th>价格</th>
+                                <th>区域</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- 内容数据将通过 JavaScript 动态加载 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="orders" class="tab-content">
+                <h2>订单管理</h2>
+                <div style="overflow-x: auto;">
+                    <table id="orderTable">
+                        <thead>
+                            <tr>
+                                <th>订单ID</th>
+                                <th>用户</th>
+                                <th>内容ID</th>
+                                <th>内容简介</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- 订单数据将通过 JavaScript 动态加载 -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
     <script>
         let currentPage = 1;
@@ -501,8 +782,6 @@
                 loadContent();
             } else if (tabName === 'orders') {
                 loadOrders();
-            } else if (tabName === 'invitationCodes') {
-                loadInvitationCodes();
             }
         }
 
@@ -511,47 +790,8 @@
             // 默认显示用户管理标签并加载第一页
             document.querySelector('.tab').click();
             loadUsers(1);
-            // 初始化邀请码管理
-            loadInvitationCodes();
         });
-
-        function loadInvitationCodes() {
-            fetch('/admin/invitation-codes')
-                .then(response => response.json())
-                .then(codes => {
-                    const tbody = document.querySelector('#invitationCodeTable tbody');
-                    tbody.innerHTML = '';
-                    codes.forEach(code => {
-                        tbody.innerHTML += `
-                            <tr>
-                                <td>${code.code}</td>
-                                <td>${code.isUsed ? '已使用' : '未使用'}</td>
-                                <td>${code.usedByUser ? code.usedByUser.username : 'N/A'}</td>
-                                <td>${new Date(code.createdAt).toLocaleString()}</td>
-                            </tr>
-                        `;
-                    });
-                })
-                .catch(error => console.error('Error loading invitation codes:', error));
-        }
-
-        function generateInvitationCode() {
-            fetch('/admin/generate-invitation-code', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('新邀请码生成成功：' + data.code);
-                        loadInvitationCodes();
-                    } else {
-                        alert('生成邀请码败：' + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error generating invitation code:', error);
-                    alert('生成邀请码失败');
-                });
-        }
-
+        
         function searchUsers() {
             const searchTerm = document.getElementById('userSearchInput').value.trim();
             loadUsers(1, searchTerm);

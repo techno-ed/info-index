@@ -1,7 +1,6 @@
 const jwt = require('jsonwebtoken');
 
 function isAdmin(req, res, next) {
-    console.log('isAdmin middleware called');
     const token = req.cookies.token;
 
     if (token) {
