@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会员计划</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="membership-container">
+        <h1>会员计划</h1>
+        <% if (currentMembership !== 'none') { %>
+            <div class="current-membership">
+                <h3>当前会员状态</h3>
+                <p>类型: <%= currentMembership %></p>
+                <p>到期时间: <%= membershipExpiry.toLocaleDateString() %></p>
+            </div>
+        <% } %>
+
+        <div class="membership-plans">
+            <div class="plan">
+                <h3>周会员</h3>
+                <p class="price"><%= prices.weekly %> 积分</p>
+                <button onclick="purchaseMembership('weekly')">购买</button>
+            </div>
+            <div class="plan">
+                <h3>月会员</h3>
+                <p class="price"><%= prices.monthly %> 积分</p>
+                <button onclick="purchaseMembership('monthly')">购买</button>
+            </div>
+            <!-- 其他会员计划 -->
+        </div>
+    </div>
+
+    <script>
+    async function purchaseMembership(type) {
+        try {
+            const response = await fetch('/api/membership/purchase', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ type })
+            });
+            const data = await response.json();
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.error);
+            }
+        } catch (error) {
+            alert('购买失败，请稍后重试');
+        }
+    }
+    </script>
+</body>
+</html> 

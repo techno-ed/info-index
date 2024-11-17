@@ -18,6 +18,14 @@ const Order = sequelize.define('Order', {
   purchaseDate: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
+  },
+  type: {
+    type: DataTypes.ENUM('content', 'membership'),
+    defaultValue: 'content'
+  },
+  membershipType: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 });
 

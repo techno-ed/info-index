@@ -32,34 +32,50 @@
 - 日志系统：自定义 UserAction 模型
 
 ## 项目结构
-```
-project/
-├── controllers/
-│   ├── userController.js
-│   ├── homeController.js
-│   └── adminController.js
-├── models/
-│   ├── User.js
-│   ├── Content.js
-│   ├── Order.js
-│   ├── UserAction.js
-│   └── InvitationCode.js
+```/
+├── bashs/
+  ├── converttdata.py
+  ├── dirstruct.py
+  ├── sql.txt
+  ├── struct.py
+  ├── test.json
+├── config/
+  ├── config.js
+  ├── database.js
 ├── middlewares/
-│   ├── auth.js
-│   └── isAdmin.js
+  ├── auth.js
+  ├── isAdmin.js
+├── utils/
+  ├── invitationCodeGenerator.js
+├── models/
+  ├── Content.js
+  ├── InvitationCode.js
+  ├── Order.js
+  ├── User.js
+  ├── UserAction.js
+  ├── index.js
 ├── public/
-│   ├── css/
-│   ├── js/
-│   └── uploads/
+├── scripts/
+  ├── seedContent.js
+├── controllers/
+  ├── homeController.js
+  ├── userController.js
+├── views/
+  ├── error.ejs
+  ├── home.ejs
+  ├── login.ejs
+  ├── register.ejs
+  ├── admin/
+    ├── content-form.ejs
+    ├── content.ejs
+    ├── dashboard.ejs
+    ├── statistics.ejs
+    ├── users.ejs
 ├── routes/
-│   ├── api.js
-│   ├── admin.js
-│   ├── homeRoutes.js
-│   └── userRoutes.js
-└── views/
-    ├── admin/
-    ├── home/
-    └── user/
+  ├── admin.js
+  ├── api.js
+  ├── homeRoutes.js
+  ├── userRoutes.js
 ```
 
 ## 数据库设计

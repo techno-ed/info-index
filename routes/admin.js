@@ -28,31 +28,21 @@ router.get('/users', async (req, res) => {
         const offset = (page - 1) * limit;
         const searchTerm = req.query.search || '';
 
-        if (!User || !User.findAndCountAll) {
-            throw new Error('User model is not properly defined');
-        }
-
-        const whereClause = searchTerm
-            ? {
+        const { count, rows } = await User.findAndCountAll({
+            where: {
                 username: {
                     [Op.like]: `%${searchTerm}%`
                 }
-            }
-            : {};
-
-        const { count, rows } = await User.findAndCountAll({
-            where: whereClause,
-            attributes: ['id', 'username', 'role', 'points'],
+            },
+            attributes: ['id', 'username', 'role', 'membershipType', 'membershipExpiry'],
             limit: limit,
             offset: offset,
             order: [['id', 'ASC']]
         });
 
-        const totalPages = Math.ceil(count / limit);
-
         res.json({
             users: rows,
-            totalPages: totalPages,
+            totalPages: Math.ceil(count / limit),
             currentPage: page,
             totalUsers: count
         });
@@ -255,16 +245,16 @@ router.post('/upload-image', upload.single('image'), (req, res) => {
     }
 });
 
-// 确保这个由已经定义
-router.put('/users/:id/points', async (req, res) => {
-    
+// 更新用户会员类型
+router.put('/users/:id/membership', async (req, res) => {
     try {
         const { id } = req.params;
-        const { points } = req.body;
+        const { membershipType } = req.body;
 
-        // 验证积分是否为有效数字
-        if (isNaN(points) || points < 0) {
-            return res.status(400).json({ error: '无效的积分值' });
+        // 验证会员类型
+        const validTypes = ['none', 'weekly', 'monthly', 'quarterly', 'yearly', 'lifetime'];
+        if (!validTypes.includes(membershipType)) {
+            return res.status(400).json({ error: '无效的会员类型' });
         }
 
         const user = await User.findByPk(id);
@@ -272,46 +262,40 @@ router.put('/users/:id/points', async (req, res) => {
             return res.status(404).json({ error: '未找到用户' });
         }
 
-        // 更新用户积分
-        user.points = parseInt(points, 10);
-        await user.save();
-        res.json({ success: true, message: '积分更新成功', user: { id: user.id, username: user.username, points: user.points } });
-    } catch (error) {
-        console.error('更新用户积分时发生错误:', error);
-        res.status(500).json({ error: '更新积分失败', details: error.message });
-    }
-});
-
-// 获取所有订单
-router.get('/orders', async (req, res) => {
-    try {
-        const orders = await Order.findAll({
-            include: [
-                { model: User, as: 'User', attributes: ['id', 'username'] },
-                { model: Content, as: 'Content', attributes: ['id', 'simpleInfo'] }
-            ],
-            order: [['createdAt', 'DESC']]
-        });
-        res.json(orders);
-    } catch (error) {
-        console.error('Error fetching orders:', error);
-        res.status(500).json({ error: '获取订单列表失败' });
-    }
-});
-
-// 删除订单
-router.delete('/orders/:id', async (req, res) => {
-    const { id } = req.params;
-    try {
-        const deletedCount = await Order.destroy({ where: { id } });
-        if (deletedCount === 1) {
-            res.json({ message: '订单删除成功' });
-        } else {
-            res.status(404).json({ error: '订单不存在或已被删除' });
+        // 计算到期时间
+        let expiryDate = null;
+        if (membershipType !== 'none') {
+            const MEMBERSHIP_DURATION = {
+                weekly: 7,
+                monthly: 30,
+                quarterly: 90,
+                yearly: 365,
+                lifetime: 36500 // 100年视为永久
+            };
+            
+            expiryDate = new Date();
+            expiryDate.setDate(expiryDate.getDate() + MEMBERSHIP_DURATION[membershipType]);
         }
+
+        // 更新用户会员信息
+        await user.update({
+            membershipType,
+            membershipExpiry: expiryDate
+        });
+
+        res.json({ 
+            success: true, 
+            message: '会员类型更新成功', 
+            user: { 
+                id: user.id, 
+                username: user.username, 
+                membershipType: user.membershipType,
+                membershipExpiry: user.membershipExpiry
+            } 
+        });
     } catch (error) {
-        console.error('删除订单时发生错误:', error);
-        res.status(500).json({ error: '删除订单失败', details: error.message });
+        console.error('更新会员类型时发生错误:', error);
+        res.status(500).json({ error: '更新会员类型失败', details: error.message });
     }
 });
 

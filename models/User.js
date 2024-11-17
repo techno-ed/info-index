@@ -23,6 +23,14 @@ const User = sequelize.define('User', {
   invitationCode: {
     type: DataTypes.STRING(5),
     allowNull: true
+  },
+  membershipType: {
+    type: DataTypes.ENUM('none', 'weekly', 'monthly', 'quarterly', 'yearly', 'lifetime'),
+    defaultValue: 'none'
+  },
+  membershipExpiry: {
+    type: DataTypes.DATE,
+    allowNull: true
   }
 }, {
   hooks: {

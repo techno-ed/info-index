@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生成会员兑换码</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="admin-container">
+        <h1>生成会员兑换码</h1>
+        
+        <div class="generate-form">
+            <select id="membershipType">
+                <option value="weekly">周卡</option>
+                <option value="monthly">月卡</option>
+                <option value="quarterly">季卡</option>
+                <option value="yearly">年卡</option>
+                <option value="lifetime">永久卡</option>
+            </select>
+            <input type="number" id="codeCount" value="1" min="1" max="100" placeholder="生成数量">
+            <button onclick="generateCodes()">生成</button>
+        </div>
+
+        <div id="generatedCodes" class="code-list"></div>
+    </div>
+
+    <script>
+    async function generateCodes() {
+        const type = document.getElementById('membershipType').value;
+        const count = document.getElementById('codeCount').value;
+
+        try {
+            const response = await fetch('/membership/generate-codes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ type, count })
+            });
+            const data = await response.json();
+            
+            if (data.success) {
+                const codeList = document.getElementById('generatedCodes');
+                codeList.innerHTML = '<h3>生成的兑换码：</h3>' + 
+                    data.codes.map(code => `<div class="code">${code}</div>`).join('');
+            } else {
+                alert(data.error || '生成失败');
+            }
+        } catch (error) {
+            alert('生成失败，请稍后重试');
+        }
+    }
+    </script>
+</body>
+</html> 

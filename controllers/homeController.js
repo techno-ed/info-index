@@ -68,7 +68,16 @@ exports.getHomePage = async (req, res, next) => {
 
         let hasPurchased = false;
         if (req.user) {
-          hasPurchased = await Order.findOne({ where: { userId: req.user.id, contentId: item.id } });
+          // 检查是否是会员或已购买
+          const isMember = req.user.membershipType !== 'none' && 
+                          new Date(req.user.membershipExpiry) > new Date();
+          hasPurchased = isMember || await Order.findOne({ 
+            where: { 
+              userId: req.user.id, 
+              contentId: item.id,
+              type: 'content'
+            } 
+          });
         }
 
         return {

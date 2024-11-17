@@ -469,7 +469,8 @@
                                 <th>ID</th>
                                 <th>用户名</th>
                                 <th>角色</th>
-                                <th>积分</th>
+                                <th>会员类型</th>
+                                <th>会员到期时间</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
@@ -607,17 +608,26 @@
                     const tbody = document.querySelector('#userTable tbody');
                     tbody.innerHTML = '';
                     users.forEach(user => {
+                        const expiryDate = user.membershipExpiry ? new Date(user.membershipExpiry).toLocaleDateString() : 'N/A';
                         tbody.innerHTML += `
                             <tr>
                                 <td>${user.id}</td>
                                 <td>${user.username}</td>
                                 <td>${user.role}</td>
                                 <td>
-                                    <span id="points-${user.id}">${user.points}</span>
-                                    <input type="number" id="edit-points-${user.id}" style="display:none;">
-                                    <button onclick="editPoints(${user.id})">编辑</button>
-                                    <button onclick="savePoints(${user.id})" style="display:none;">保存</button>
+                                    <span id="membership-${user.id}">${user.membershipType}</span>
+                                    <select id="edit-membership-${user.id}" style="display:none;">
+                                        <option value="none">无会员</option>
+                                        <option value="weekly">周卡</option>
+                                        <option value="monthly">月卡</option>
+                                        <option value="quarterly">季卡</option>
+                                        <option value="yearly">年卡</option>
+                                        <option value="lifetime">永久</option>
+                                    </select>
+                                    <button onclick="editMembership(${user.id})">编辑</button>
+                                    <button onclick="saveMembership(${user.id})" style="display:none;">保存</button>
                                 </td>
+                                <td>${expiryDate}</td>
                                 <td><button onclick="deleteUser(${user.id})">删除</button></td>
                             </tr>
                         `;
@@ -645,45 +655,44 @@
             loadUsers(currentPage + 1, searchTerm);
         });
 
-        // 编辑积分
-        function editPoints(userId) {
-            const pointsSpan = document.getElementById(`points-${userId}`);
-            const pointsInput = document.getElementById(`edit-points-${userId}`);
-            const editButton = pointsSpan.nextElementSibling.nextElementSibling;
+        // 编辑会员类型
+        function editMembership(userId) {
+            const membershipSpan = document.getElementById(`membership-${userId}`);
+            const membershipSelect = document.getElementById(`edit-membership-${userId}`);
+            const editButton = membershipSpan.nextElementSibling.nextElementSibling;
             const saveButton = editButton.nextElementSibling;
 
-            pointsSpan.style.display = 'none';
-            pointsInput.style.display = 'inline';
-            pointsInput.value = pointsSpan.textContent;
+            membershipSpan.style.display = 'none';
+            membershipSelect.style.display = 'inline';
+            membershipSelect.value = membershipSpan.textContent;
             editButton.style.display = 'none';
             saveButton.style.display = 'inline';
         }
 
-        // 保存积分
-        function savePoints(userId) {
-            const pointsInput = document.getElementById(`edit-points-${userId}`);
-            const newPoints = pointsInput.value;
+        // 保存会员类型
+        function saveMembership(userId) {
+            const membershipSelect = document.getElementById(`edit-membership-${userId}`);
+            const newMembershipType = membershipSelect.value;
 
-            fetch(`/admin/users/${userId}/points`, {
+            fetch(`/admin/users/${userId}/membership`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ points: newPoints }),
+                body: JSON.stringify({ membershipType: newMembershipType }),
             })
-            .then(response => {
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    loadUsers();  // 重新加载用户列表
+                    loadUsers(currentPage);  // 重新加载用户列表
                 } else {
-                    console.error('更新积分失败:', data.error);
+                    console.error('更新会员类型失败:', data.error);
+                    alert(data.error);
                 }
             })
             .catch(error => {
-                console.error('更新积分时发生错误:', error);
-                alert('更新积分失败: ' + error.message);
+                console.error('更新会员类型时发生错误:', error);
+                alert('更新失败: ' + error.message);
             });
         }
 
