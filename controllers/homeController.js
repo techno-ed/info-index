@@ -75,6 +75,7 @@ exports.getHomePage = async (req, res, next) => {
       content: formattedContent,
       user: updatedUser,
       customerServiceContact: config.customerService.contact,
+      membership: config.membership,
       justLoggedIn: justLoggedIn
     });
   } catch (error) {

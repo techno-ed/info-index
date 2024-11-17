@@ -434,11 +434,27 @@
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .membership-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .membership-description {
+            color: #666;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+
+        .membership-price {
+            color: #e74c3c;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
         }
 
         .redeem-section {
@@ -468,6 +484,20 @@
 
         .redeem-form button:hover {
             background: #0056b3;
+        }
+
+        /* 客服信息样式 */
+        .customer-service-info {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .customer-service-info p {
+            margin-bottom: 10px;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -561,7 +591,11 @@
                     <div class="current-status">
                         <h3>当前状态</h3>
                         <% if (user.membershipType !== 'none') { %>
-                            <p>会员类型: <%= user.membershipType %></p>
+                            <p>会员类型: <%= user.membershipType === 'weekly' ? '周卡会员' : 
+                                          user.membershipType === 'monthly' ? '月卡会员' :
+                                          user.membershipType === 'quarterly' ? '季卡会员' :
+                                          user.membershipType === 'yearly' ? '年卡会员' : 
+                                          user.membershipType %></p>
                             <p>到期时间: <%= new Date(user.membershipExpiry).toLocaleDateString() %></p>
                         <% } else { %>
                             <p>当前未开通会员</p>
@@ -571,22 +605,15 @@
                     <div class="membership-options">
                         <h3>会员套餐</h3>
                         <div class="membership-cards">
-                            <div class="membership-card" onclick="redeemMembership('weekly')">
-                                <h4>周卡</h4>
-                                <p>有效期：7天</p>
-                            </div>
-                            <div class="membership-card" onclick="redeemMembership('monthly')">
-                                <h4>月卡</h4>
-                                <p>有效期：30天</p>
-                            </div>
-                            <div class="membership-card" onclick="redeemMembership('quarterly')">
-                                <h4>季卡</h4>
-                                <p>有效期：90天</p>
-                            </div>
-                            <div class="membership-card" onclick="redeemMembership('yearly')">
-                                <h4>年卡</h4>
-                                <p>有效期：365天</p>
-                            </div>
+                            <% Object.entries(membership).forEach(([key, plan]) => { %>
+                                <div class="membership-card" onclick="window.open('<%= plan.purchaseUrl %>', '_blank')">
+                                    <h4><%= plan.title %></h4>
+                                    <div class="membership-description">
+                                        <%= plan.description.split('\n').join('<br>') %>
+                                    </div>
+                                    <div class="membership-price"><%= plan.price %></div>
+                                </div>
+                            <% }); %>
                         </div>
                     </div>
 
