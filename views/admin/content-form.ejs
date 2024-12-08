@@ -129,11 +129,11 @@
             </div>
             <div class="separator"></div>
             <div>
-                <label for="preview">预览:</label>
+                <label for="preview">预览图片:</label>
                 <input type="file" id="preview" name="preview" accept="image/*" <%= contentId ? '' : 'required' %>>
-                <% if (contentId) { %>
-                    <img id="previewImage" src="" alt="当前预览图" style="max-width:100px;">
-                <% } %>
+                <div id="previewContainer" style="margin-top: 10px; display: none;">
+                    <img id="previewImage" src="" alt="预览图片" style="max-width: 200px;">
+                </div>
             </div>
             <div class="separator"></div>
             <div style="display: flex; justify-content: space-between;">
@@ -158,9 +158,11 @@
             <div class="separator"></div>
             <div>
                 <label for="detailEditor">详细信息:</label>
-                <div id="detailEditor" contenteditable="true"></div>
-                <input type="file" id="detailImage" accept="image/*">
-                <button type="button" onclick="insertImage()">插入图片</button>
+                <div class="mb-2">
+                    <input type="file" id="detailImage" accept="image/*" style="display: inline-block;">
+                    <button type="button" class="btn btn-sm btn-primary" onclick="insertImage()">插入图片</button>
+                </div>
+                <div id="detailEditor" contenteditable="true" style="min-height: 200px; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px;"></div>
             </div>
             <div class="separator"></div>
             <div>
@@ -212,44 +214,71 @@
                 });
         }
 
+        // 预览图片处理
+        document.getElementById('preview').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewContainer = document.getElementById('previewContainer');
+                    const previewImage = document.getElementById('previewImage');
+                    previewImage.src = e.target.result;
+                    previewContainer.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // 详情图片上传
         function insertImage() {
             const input = document.getElementById('detailImage');
             const file = input.files[0];
-            if (file) {
-                const formData = new FormData();
-                formData.append('image', file);
-
-                // 显示上传进度
-                const progressBar = document.createElement('div');
-                progressBar.style.width = '0%';
-                progressBar.style.height = '5px';
-                progressBar.style.backgroundColor = 'blue';
-                document.getElementById('detailEditor').appendChild(progressBar);
-
-                fetch('/admin/upload-image', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.url) {
-                        const img = document.createElement('img');
-                        img.src = data.url;
-                        img.style.maxWidth = '100%';
-                        document.getElementById('detailEditor').appendChild(img);
-                    } else {
-                        alert('图片上传失败');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('图片上传失败');
-                })
-                .finally(() => {
-                    // 移除进度条
-                    progressBar.remove();
-                });
+            if (!file) {
+                alert('请先选择要上传的图片');
+                return;
             }
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            // 创建加载提示
+            const loadingText = document.createElement('div');
+            loadingText.textContent = '图片上传中...';
+            document.getElementById('detailEditor').appendChild(loadingText);
+
+            fetch('/admin/upload-image', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => Promise.reject(err));
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success && data.url) {
+                    const img = document.createElement('img');
+                    img.src = data.url;
+                    img.style.maxWidth = '100%';
+                    img.style.height = 'auto';
+                    img.style.display = 'block';
+                    img.style.margin = '10px 0';
+                    
+                    // 替换加载提示为图片
+                    loadingText.replaceWith(img);
+                    
+                    // 清除文件输入
+                    input.value = '';
+                } else {
+                    throw new Error(data.error || '图片上传失败');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('图片上传失败: ' + error.message);
+                loadingText.remove();
+            });
         }
 
         function addCommentInput(value = '') {
@@ -265,48 +294,68 @@
 
         document.getElementById('contentForm').onsubmit = function(e) {
             e.preventDefault();
-            const formData = new FormData(this);
+            const formData = new FormData();
+
+            // 基本信息
+            formData.append('simpleInfo', document.getElementById('simpleInfo').value);
+            formData.append('location', document.getElementById('location').value);
+            formData.append('price', document.getElementById('price').value);
+            formData.append('area', document.getElementById('area').value);
+            formData.append('city', document.getElementById('city').value);
+            formData.append('hiddenContent', document.getElementById('hiddenContent').value);
+
+            // 处理预览图片
+            const previewFile = document.getElementById('preview').files[0];
+            if (previewFile) {
+                formData.append('preview', previewFile);
+            }
 
             // 处理详情
             const detailEditor = document.getElementById('detailEditor');
-            formData.set('detail', detailEditor.innerHTML);
+            formData.append('detail', detailEditor.innerHTML);
 
             // 处理评论
             const comments = Array.from(document.querySelectorAll('#commentList input'))
                 .map(input => input.value)
                 .filter(comment => comment.trim() !== '');
-            
-            // 将评论数组转换为 JSON 字符串
-            formData.set('commnet', JSON.stringify(comments));
-
-            // 确保 city 字段被包含在 formData 中
-            formData.set('city', document.getElementById('city').value);
+            formData.append('comment', JSON.stringify(comments));
 
             const url = contentId ? `/admin/content/${contentId}` : '/admin/content';
             const method = contentId ? 'PUT' : 'POST';
+
+            // 调试信息
+            console.log('提交的数据:', {
+                simpleInfo: formData.get('simpleInfo'),
+                location: formData.get('location'),
+                price: formData.get('price'),
+                area: formData.get('area'),
+                city: formData.get('city'),
+                detail: formData.get('detail'),
+                comment: formData.get('comment'),
+                hiddenContent: formData.get('hiddenContent')
+            });
 
             fetch(url, { 
                 method, 
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => Promise.reject(err));
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.error) {
                     alert(data.error);
                 } else {
-                    if (contentId) {
-                        alert('内容更新成功');
-                        window.opener.location.reload();
-                        window.close();
-                    } else {
-                        alert('内容添加成功');
-                        clearForm();
-                        window.opener.location.reload();
-                    }
+                    alert(contentId ? '内容更新成功' : '内容添加成功');
+                    window.location.href = '/admin';
                 }
             })
             .catch(error => {
                 console.error('提交表单时出错:', error);
+                alert('操作失败: ' + (error.error || '未知错误'));
             });
         };
 

@@ -597,7 +597,7 @@
 
         async function logAction(action, contentId = null) {
             try {
-                const response = await fetch('/api/log-action', {
+                const response = await fetch('/api/user-actions/log', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
