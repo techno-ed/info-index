@@ -759,41 +759,37 @@
         }
 
         // 模态框相关函数
-        const modal = document.getElementById('area-modal');
-        const btn = document.getElementById('area-filter-button');
-        const span = document.getElementsByClassName('close')[0];
+        const areaModal = document.getElementById('area-modal');
+        const areaBtn = document.getElementById('area-filter-button');
+        const areaSpan = areaModal.querySelector('.close');
 
-        btn.onclick = () => modal.style.display = 'block';
-        span.onclick = closeModal;
-        window.onclick = (event) => {
-            if (event.target == modal) {
-                closeModal();
-            }
-        }
-
-        function closeModal() {
-            modal.style.display = 'none';
-        }
-
-        // 城市模态框相关函数
         const cityModal = document.getElementById('city-modal');
         const cityBtn = document.getElementById('city-filter-button');
-        const citySpan = cityModal.getElementsByClassName('close')[0];
+        const citySpan = cityModal.querySelector('.close');
 
+        const userPointsModal = document.getElementById('userPointsModal');
+
+        // 打开模态框
+        areaBtn.onclick = () => areaModal.style.display = 'block';
         cityBtn.onclick = () => cityModal.style.display = 'block';
-        citySpan.onclick = closeCityModal;
-        window.onclick = (event) => {
-            if (event.target == cityModal) {
-                closeCityModal();
-            } else if (event.target == modal) {
-                closeModal();
-            } else if (event.target == document.getElementById('userPointsModal')) {
-                closeUserPointsModal();
-            }
-        }
 
-        function closeCityModal() {
-            cityModal.style.display = 'none';
+        // 关闭按钮点击事件
+        areaSpan.onclick = () => areaModal.style.display = 'none';
+        citySpan.onclick = () => cityModal.style.display = 'none';
+
+        // 点击模态框外部关闭
+        window.onclick = (event) => {
+            if (event.target === areaModal) {
+                areaModal.style.display = 'none';
+            } else if (event.target === cityModal) {
+                cityModal.style.display = 'none';
+            } else if (event.target === userPointsModal) {
+                userPointsModal.style.display = 'none';
+            }
+        };
+
+        function closeUserPointsModal() {
+            userPointsModal.style.display = 'none';
         }
 
         document.addEventListener('DOMContentLoaded', function() {

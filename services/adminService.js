@@ -167,19 +167,6 @@ class AdminService {
             });
 
             const processedUserStats = Object.values(userStatsMap);
-
-            console.log('Statistics results:', {
-                dailyStats: dailyStats.map(stat => ({
-                    action: stat.action,
-                    count: parseInt(stat.getDataValue('count'))
-                })),
-                trendStats: trendStats.map(stat => ({
-                    date: stat.getDataValue('date'),
-                    count: parseInt(stat.getDataValue('count'))
-                })),
-                userStats: processedUserStats
-            });
-
             return {
                 dailyStats: dailyStats.map(stat => ({
                     action: stat.action,
