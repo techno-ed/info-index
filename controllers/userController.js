@@ -2,6 +2,7 @@ const User = require('../models/User');
 const InvitationCode = require('../models/InvitationCode');
 const jwt = require('jsonwebtoken');
 const config = require('../config/config');
+const userService = require('../services/userService');
 
 exports.register = async (req, res) => {
   try {
@@ -113,5 +114,36 @@ exports.getUserPoints = async (req, res) => {
     } catch (error) {
         console.error('获取用户积分错误:', error);
         res.status(500).json({ error: '获取积分失败，请稍后再试' });
+    }
+};
+
+exports.getProfile = async (req, res, next) => {
+    try {
+        // 从 cookie 中获取 token
+        const token = req.cookies.token;
+        if (!token) {
+            return res.redirect('/login');
+        }
+
+        // 验证 token 并获取用户ID
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const userId = decoded.id;
+        
+        const profileData = await userService.getProfileData(userId);
+
+        console.log(profileData.orders);
+        
+        res.render('profile', {
+            title: '个人中心',
+            user: profileData.user,
+            orders: profileData.orders,
+            moment: require('moment')  // 用于格式化日期
+        });
+    } catch (error) {
+        console.error('获取用户资料页面时出错:', error);
+        if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+            return res.redirect('/login');
+        }
+        next(error);
     }
 };

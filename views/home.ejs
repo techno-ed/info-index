@@ -427,7 +427,7 @@
                             <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
                                 欢迎, <%= user.username %> | <a href="/logout">登出</a> | <a href="/admin">管理页面</a>
                             <% } else if (typeof user !== 'undefined' && user) { %>
-                                欢迎, <a href="#" class="user-link" onclick="showUserPoints()"><%= user.username %></a> | <a href="/logout">登出</a>
+                                欢迎, <a href="/profile"><%= user.username %></a> | <a href="/logout">登出</a>
                             <% } else { %>
                                 <a href="/login">登录</a> | <a href="/register">注册</a>
                             <% } %>
@@ -837,14 +837,6 @@
                     console.log('未找到应 ID 的卡片');
                 }
             }
-
-            // 新增：上报用户名到百度统计
-            var username = '<%= user ? user.username : "未登录用户" %>';
-            if (window._hmt) {
-                _hmt.push(['_trackEvent', '用户', '访问主页', username]);
-                window._hmt.push(['_setUserId', username]);
-            }
-
             logAction('view_home');
         });
     </script>

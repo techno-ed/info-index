@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .profile-header {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #666;
+        }
+        .user-details h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #333;
+        }
+        .user-stats {
+            margin-top: 10px;
+            color: #666;
+        }
+        .orders-section {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .orders-section h2 {
+            margin: 0 0 20px 0;
+            color: #333;
+        }
+        .order-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .order-item {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            transition: transform 0.2s;
+        }
+        .order-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .order-item h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 18px;
+        }
+        .order-meta {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .order-price {
+            color: #e53935;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .empty-orders {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .order-item-deleted {
+            background-color: #f0f0f0;
+            color: #666;
+        }
+        .contact-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            padding: 8px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .copy-btn {
+            background: none;
+            border: none;
+            padding: 4px;
+            cursor: pointer;
+            color: #666;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .copy-btn:hover {
+            background-color: #e9ecef;
+            color: #333;
+        }
+        .copy-btn.success {
+            color: #28a745;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            .order-list {
+                grid-template-columns: 1fr;
+            }
+            .user-info {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="profile-header">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <%= user.username.charAt(0).toUpperCase() %>
+                </div>
+                <div class="user-details">
+                    <h1><%= user.username %></h1>
+                    <div class="user-stats">
+                        <p>积分: <%= user.points %> | 注册时间: <%= moment(user.createdAt).format('YYYY-MM-DD') %></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="orders-section">
+            <h2>购买记录</h2>
+            <% if (orders && orders.length > 0) { %>
+                <div class="order-list">
+                    <% orders.forEach(order => { %>
+                        <% if (order.Content) { %>
+                            <div class="order-item">
+                                <h3><%= order.contentId %> 号</h3>
+                                <div class="order-meta">
+                                    <p>简介：<%= order.Content.simpleInfo %></p>
+                                    <p>位置: <%= order.Content.location %></p>
+                                    <p>城市: <%= order.Content.city %> | 区域: <%= order.Content.area %></p>
+                                    <p>购买时间: <%= moment(order.createdAt).format('YYYY-MM-DD HH:mm') %></p>
+                                </div>
+                                <div class="contact-info"> 
+                                    联系方式：<span id="contact-<%= order.id %>"><%= order.Content.hiddenContent %></span>
+                                    <button class="copy-btn" onclick="copyContact('<%= order.id %>')">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                            <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                
+                            </div>
+                        <% } else { %>
+                            <div class="order-item order-item-deleted">
+                                <h3>内容已删除</h3>
+                                <div class="order-meta">
+                                    <p>购买时间: <%= moment(order.createdAt).format('YYYY-MM-DD HH:mm') %></p>
+                                </div>
+                            </div>
+                        <% } %>
+                    <% }); %>
+                </div>
+            <% } else { %>
+                <div class="empty-orders">
+                    <p>暂无购买记录</p>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+    <script>
+        async function copyContact(orderId) {
+            const contactElement = document.getElementById(`contact-${orderId}`);
+            const copyButton = contactElement.nextElementSibling;
+            
+            try {
+                await navigator.clipboard.writeText(contactElement.textContent);
+                
+                // 视觉反馈
+                copyButton.classList.add('success');
+                setTimeout(() => {
+                    copyButton.classList.remove('success');
+                }, 1500);
+            } catch (err) {
+                console.error('复制失败:', err);
+                // 降级方案
+                const textArea = document.createElement('textarea');
+                textArea.value = contactElement.textContent;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    copyButton.classList.add('success');
+                    setTimeout(() => {
+                        copyButton.classList.remove('success');
+                    }, 1500);
+                } catch (err) {
+                    console.error('复制失败:', err);
+                }
+                document.body.removeChild(textArea);
+            }
+        }
+    </script>
+</body>
+</html>
