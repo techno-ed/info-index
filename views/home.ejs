@@ -699,12 +699,6 @@
                         if (document.getElementById('userPointsDisplay')) {
                             document.getElementById('userPointsDisplay').textContent = data.remainingPoints;
                         }
-                        
-                        var username = '<%= user ? user.username : "未登录用户" %>';
-                        // 百度统计打点
-                        if (window._hmt) {
-                            _hmt.push(['_trackEvent', '购买', '使用积分购买', `用户ID:${username},内容ID:${contentId}`]);
-                        }
                     } else {
                         if (data.error === '积分不足') {
                             alert('积分不足，请联系客服充值');

@@ -1,4 +1,5 @@
 const { User, Content, Order } = require('../models');
+const { contentPrice } = require('../config/config');
 
 class HomeService {
     async getHomePageData(userId) {
@@ -86,7 +87,7 @@ class HomeService {
             throw new Error('已经购买过此内容');
         }
 
-        if (user.points < content.price) {
+        if (user.points < contentPrice) {
             throw new Error('积分不足');
         }
 
@@ -94,14 +95,14 @@ class HomeService {
         const order = await Order.create({
             userId,
             contentId,
-            price: content.price
+            price: contentPrice
         });
 
-        await user.decrement('points', { by: content.price });
+        await user.decrement('points', { by: contentPrice });
 
         return {
             order,
-            updatedPoints: user.points - content.price
+            updatedPoints: user.points - contentPrice
         };
     }
 }
