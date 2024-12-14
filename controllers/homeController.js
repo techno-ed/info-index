@@ -37,12 +37,13 @@ exports.purchaseContent = async (req, res) => {
         const { id: contentId } = req.params;
         const userId = req.user.id;
 
-        const { order, updatedPoints } = await homeService.purchaseContent(userId, contentId);
+        const { order, updatedPoints, hiddenContent } = await homeService.purchaseContent(userId, contentId);
 
         res.json({
             success: true,
             message: '购买成功',
-            points: updatedPoints
+            points: updatedPoints,
+            hiddenContent: hiddenContent
         });
     } catch (error) {
         console.error('购买内容时出错:', error);

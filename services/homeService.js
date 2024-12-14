@@ -99,10 +99,12 @@ class HomeService {
         });
 
         await user.decrement('points', { by: contentPrice });
+        const updatedUser = await user.reload();
 
         return {
             order,
-            updatedPoints: user.points - contentPrice
+            updatedPoints: updatedUser.points,
+            hiddenContent: content.hiddenContent // 返回隐藏内容
         };
     }
 }

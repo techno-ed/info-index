@@ -682,40 +682,58 @@
 
         async function purchaseContent(contentId) {
             try {
-                fetch(`/content/${contentId}/purchase`, {
+                const response = await fetch(`/content/${contentId}/purchase`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        document.getElementById('detail-content').innerHTML = `
-                            <h3>隐藏内容</h3>
-                            ${data.hiddenContent}
-                        `;
-                        // 更新用户积分显示
-                        if (document.getElementById('userPointsDisplay')) {
-                            document.getElementById('userPointsDisplay').textContent = data.remainingPoints;
-                        }
-                    } else {
-                        if (data.error === '积分不足') {
-                            alert('积分不足，请联系客服充值');
-                        } else {
-                            alert(data.error);
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('购买失败，请稍后再试');
                 });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 更新隐藏内容显示
+                    const detailContent = document.getElementById('detail-content');
+                    const hiddenContentHtml = `
+                        <div class="hidden-content">
+                            <h3>联系方式</h3>
+                            <div class="contact-info">
+                                <span id="contact-${contentId}">${data.hiddenContent}</span>
+                            </div>
+                        </div>
+                    `;
+                    detailContent.innerHTML = hiddenContentHtml;
+                    
+                    // 更新用户积分显示
+                    const pointsDisplay = document.getElementById('userPointsDisplay');
+                    if (pointsDisplay) {
+                        pointsDisplay.textContent = data.points;
+                    }
 
-                await logAction('purchase', contentId);
+                    // 记录购买行为
+                    await logAction('purchase', contentId);
+                } else {
+                    if (data.message === '积分不足') {
+                        alert('积分不足，请联系客服充值');
+                    } else {
+                        alert(data.message || '购买失败，请稍后再试');
+                    }
+                }
             } catch (error) {
                 console.error('Error:', error);
+                alert('购买失败，请稍后再试');
             }
+        }
+
+        function copyContact(contentId) {
+            const contactElement = document.getElementById(`contact-${contentId}`);
+            const contactText = contactElement.textContent;
+            navigator.clipboard.writeText(contactText).then(() => {
+                alert('联系方式已复制到剪贴板！');
+            }).catch((error) => {
+                console.error('Error copying contact:', error);
+                alert('复制失败，请稍后再试！');
+            });
         }
 
         function closeDetail() {
