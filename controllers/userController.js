@@ -130,8 +130,6 @@ exports.getProfile = async (req, res, next) => {
         const userId = decoded.id;
         
         const profileData = await userService.getProfileData(userId);
-
-        console.log(profileData.orders);
         
         res.render('profile', {
             title: '个人中心',

@@ -323,18 +323,6 @@
             const url = contentId ? `/admin/content/${contentId}` : '/admin/content';
             const method = contentId ? 'PUT' : 'POST';
 
-            // 调试信息
-            console.log('提交的数据:', {
-                simpleInfo: formData.get('simpleInfo'),
-                location: formData.get('location'),
-                price: formData.get('price'),
-                area: formData.get('area'),
-                city: formData.get('city'),
-                detail: formData.get('detail'),
-                comment: formData.get('comment'),
-                hiddenContent: formData.get('hiddenContent')
-            });
-
             fetch(url, { 
                 method, 
                 body: formData
