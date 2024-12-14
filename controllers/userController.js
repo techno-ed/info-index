@@ -51,7 +51,11 @@ exports.login = async (req, res) => {
     );
     
     // 将 token 存储在 cookie 中
-    res.cookie('token', token, { httpOnly: true, maxAge: 3600000 }); // 1小时有效期
+    res.cookie('token', token, { 
+      httpOnly: true, 
+      maxAge: 24 * 60 * 60 * 1000, // 24小时有效期，与 JWT 一致
+      secure: process.env.NODE_ENV === 'production' // 在生产环境中只通过 HTTPS 发送
+    }); 
     
     // 可选：在服务器端会话中存储用户信息
     req.session.user = {
